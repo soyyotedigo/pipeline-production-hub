@@ -1,0 +1,21 @@
+meta {
+  name: 10 List Shot Assets
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/shots/{{shotId}}/assets
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list shot assets returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

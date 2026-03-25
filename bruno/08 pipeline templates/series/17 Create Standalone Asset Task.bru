@@ -1,0 +1,48 @@
+meta {
+  name: 17 Create Standalone Asset Task
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/assets/{{assetId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Standalone Asset Task",
+    "step_type": "shading",
+    "order": 10,
+    "status": "pending",
+    "notes": "Standalone asset task created by the Bruno pipeline collection."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("standaloneAssetTaskId", res.body.id);
+  }
+}
+
+tests {
+  test("create standalone asset task returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create standalone asset task returns expected shape", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.shot_id).to.equal(null);
+    expect(body.asset_id).to.equal(bru.getVar("assetId"));
+    expect(body.step_type).to.equal("shading");
+    expect(body.status).to.equal("pending");
+  });
+}

@@ -1,0 +1,29 @@
+meta {
+  name: 13 Reply To Project Note
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/notes/{{projectNoteId}}/reply
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "body": "Reply created from Bruno notes collection.",
+    "is_client_visible": false
+  }
+}
+
+tests {
+  test("reply to project note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

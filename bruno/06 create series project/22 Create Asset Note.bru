@@ -1,0 +1,45 @@
+meta {
+  name: 22 Create Asset Note
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{baseUrl}}/assets/{{assetAId}}/notes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_id": "{{projectId}}",
+    "subject": "Asset status",
+    "body": "Asset note created by the full series Bruno collection.",
+    "is_client_visible": false
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetNoteId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create asset note uses asset context", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.entity_type).to.equal("asset");
+    expect(body.entity_id).to.equal(bru.getVar("assetAId"));
+  });
+}

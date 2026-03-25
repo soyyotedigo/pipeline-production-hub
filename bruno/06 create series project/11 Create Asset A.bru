@@ -1,0 +1,55 @@
+meta {
+  name: 11 Create Asset A
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/assets
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{assetAName}}",
+    "code": "{{assetACode}}",
+    "asset_type": "character",
+    "description": "Primary asset for the series full flow.",
+    "priority": "normal"
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("seriesFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("seriesFlowSuffix", suffix);
+  bru.setVar("assetAName", `Asset A ${suffix}`);
+  bru.setVar("assetACode", `AS${suffix}A`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetAId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset A returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create asset A uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.name).to.equal(bru.getVar("assetAName"));
+    expect(body.code).to.equal(bru.getVar("assetACode"));
+    expect(body.asset_type).to.equal("character");
+  });
+}

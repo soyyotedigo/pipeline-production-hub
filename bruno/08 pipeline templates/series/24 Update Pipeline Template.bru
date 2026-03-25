@@ -1,0 +1,28 @@
+meta {
+  name: 24 Update Pipeline Template
+  type: http
+  seq: 24
+}
+
+patch {
+  url: {{baseUrl}}/pipeline-templates/{{templateId}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "description": "Updated by Bruno pipeline template collection."
+  }
+}
+
+tests {
+  test("update pipeline template returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

@@ -1,0 +1,37 @@
+meta {
+  name: 13 Reorder Playlist Items
+  type: http
+  seq: 13
+}
+
+patch {
+  url: {{baseUrl}}/playlists/{{playlistId}}/items/reorder
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "items": [
+      {
+        "item_id": "{{playlistItemAId}}",
+        "order": 2
+      },
+      {
+        "item_id": "{{playlistItemBId}}",
+        "order": 1
+      }
+    ]
+  }
+}
+
+tests {
+  test("reorder playlist items returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

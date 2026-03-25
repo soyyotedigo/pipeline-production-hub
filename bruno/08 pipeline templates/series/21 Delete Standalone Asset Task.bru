@@ -1,0 +1,21 @@
+meta {
+  name: 21 Delete Standalone Asset Task
+  type: http
+  seq: 21
+}
+
+delete {
+  url: {{baseUrl}}/pipeline-tasks/{{standaloneAssetTaskId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete standalone asset task returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

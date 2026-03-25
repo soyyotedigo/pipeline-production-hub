@@ -1,0 +1,21 @@
+meta {
+  name: 08 Remove Role
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/users/{{newUserId}}/roles/artist
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("remove role returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

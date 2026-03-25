@@ -1,0 +1,45 @@
+meta {
+  name: 08 Create Asset
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/assets
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{assetName}}",
+    "code": "{{assetCode}}",
+    "asset_type": "character",
+    "description": "Asset for the pipeline templates Bruno collection.",
+    "priority": "normal"
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("pipelineFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("assetName", `Asset ${suffix}`);
+  bru.setVar("assetCode", `AS${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: 09 Restore Webhook
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/webhooks/{{webhookId}}/restore
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("restore webhook returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

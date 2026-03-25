@@ -1,0 +1,45 @@
+meta {
+  name: 21 Create Shot Note
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotAId}}/notes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_id": "{{projectId}}",
+    "subject": "Shot review prep",
+    "body": "Shot note created by the full series Bruno collection.",
+    "is_client_visible": false
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotNoteId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create shot note uses shot context", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.entity_type).to.equal("shot");
+    expect(body.entity_id).to.equal(bru.getVar("shotAId"));
+  });
+}

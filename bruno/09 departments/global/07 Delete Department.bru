@@ -1,0 +1,22 @@
+meta {
+  name: 07 Delete Department
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{baseUrl}}/departments/{{departmentId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete department returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+

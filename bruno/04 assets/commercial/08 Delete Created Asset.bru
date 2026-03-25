@@ -1,0 +1,25 @@
+meta {
+  name: 08 Delete Created Asset
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/assets/{{assetId}}
+  body: none
+  auth: none
+}
+
+params:query {
+  force: True
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete asset returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

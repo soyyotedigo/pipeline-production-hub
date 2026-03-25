@@ -1,0 +1,21 @@
+meta {
+  name: 11 List Shot Tags
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/shots/{{shotId}}/tags
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list shot tags returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

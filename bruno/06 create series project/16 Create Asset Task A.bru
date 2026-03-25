@@ -1,0 +1,48 @@
+meta {
+  name: 16 Create Asset Task A
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/assets/{{assetAId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Model Asset A",
+    "step_type": "modeling",
+    "order": 1,
+    "status": "pending",
+    "notes": "Primary asset task created by the full series collection."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetTaskAId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset task A returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create asset task A uses asset A", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.shot_id).to.equal(null);
+    expect(body.asset_id).to.equal(bru.getVar("assetAId"));
+    expect(body.step_type).to.equal("modeling");
+    expect(body.status).to.equal("pending");
+  });
+}

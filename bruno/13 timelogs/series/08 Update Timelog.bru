@@ -1,0 +1,29 @@
+meta {
+  name: 08 Update Timelog
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/timelogs/{{timelogId}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "description": "Updated from Bruno timelogs collection.",
+    "duration_minutes": 90
+  }
+}
+
+tests {
+  test("update timelog returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

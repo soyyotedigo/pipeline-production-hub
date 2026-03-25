@@ -1,0 +1,50 @@
+meta {
+  name: 06 Create Shot Task A
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Playlist Task A",
+    "step_type": "animation",
+    "order": 10,
+    "status": "pending",
+    "notes": "Standalone shot task created by the Bruno pipeline collection."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotTaskAId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot task returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create shot task returns expected shape", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.shot_id).to.equal(bru.getVar("shotId"));
+    expect(body.asset_id).to.equal(null);
+    expect(body.step_type).to.equal("animation");
+    expect(body.status).to.equal("pending");
+  });
+}
+
+

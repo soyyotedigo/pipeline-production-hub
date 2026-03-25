@@ -1,0 +1,46 @@
+meta {
+  name: 07 Create Shot
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{shotName}}",
+    "code": "{{shotCode}}",
+    "sequence_id": "{{sequenceId}}",
+    "frame_start": 1001,
+    "frame_end": 1040,
+    "priority": "normal"
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("pipelineFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("shotName", `Shot ${suffix}`);
+  bru.setVar("shotCode", `SH${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

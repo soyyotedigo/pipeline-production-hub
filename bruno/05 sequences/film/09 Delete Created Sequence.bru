@@ -1,0 +1,25 @@
+meta {
+  name: 09 Delete Created Sequence
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/sequences/{{sequenceId}}
+  body: none
+  auth: none
+}
+
+params:query {
+  force: True
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete sequence returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

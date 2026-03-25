@@ -1,0 +1,36 @@
+meta {
+  name: 05 Create Project Note
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/notes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "subject": "Project Note",
+    "body": "Created from Bruno notes collection.",
+    "is_client_visible": false
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("projectNoteId", res.body.id);
+  }
+}
+
+tests {
+  test("create project note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

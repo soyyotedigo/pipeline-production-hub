@@ -1,0 +1,25 @@
+meta {
+  name: 10 Delete Webhook
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrl}}/webhooks/{{webhookId}}
+  body: none
+  auth: none
+}
+
+params:query {
+  force: True
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete webhook returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

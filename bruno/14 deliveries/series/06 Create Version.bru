@@ -1,0 +1,36 @@
+meta {
+  name: 06 Create Version
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/pipeline-tasks/{{taskId}}/versions
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "description": "Delivery version from Bruno.",
+    "thumbnail_url": "https://example.com/thumb.jpg",
+    "media_url": "https://example.com/review.mov"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("versionId", res.body.id);
+  }
+}
+
+tests {
+  test("create version returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

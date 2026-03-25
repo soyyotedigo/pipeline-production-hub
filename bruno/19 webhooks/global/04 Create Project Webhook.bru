@@ -1,0 +1,38 @@
+meta {
+  name: 04 Create Project Webhook
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/webhooks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "url": "https://hooks.example.com/vfxhub",
+    "events": [
+      "status.changed",
+      "file.uploaded"
+    ]
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("webhookId", res.body.id);
+  }
+}
+
+tests {
+  test("create project webhook returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

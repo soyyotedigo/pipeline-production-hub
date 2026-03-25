@@ -1,0 +1,48 @@
+meta {
+  name: 17 Create Asset Task B
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/assets/{{assetBId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Texture Asset B",
+    "step_type": "texture",
+    "order": 1,
+    "status": "pending",
+    "notes": "Secondary asset task created by the full series collection."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetTaskBId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset task B returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create asset task B uses asset B", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.shot_id).to.equal(null);
+    expect(body.asset_id).to.equal(bru.getVar("assetBId"));
+    expect(body.step_type).to.equal("texture");
+    expect(body.status).to.equal("pending");
+  });
+}

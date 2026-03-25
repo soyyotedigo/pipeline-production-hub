@@ -1,0 +1,21 @@
+meta {
+  name: 05 List Webhooks
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/webhooks
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list webhooks returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

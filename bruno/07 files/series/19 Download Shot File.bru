@@ -1,0 +1,21 @@
+meta {
+  name: 19 Download Shot File
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{baseUrl}}/files/{{shotFileV2Id}}/download
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("download shot file returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

@@ -1,0 +1,48 @@
+meta {
+  name: 14 Create Shot Task A
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotAId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Layout A",
+    "step_type": "layout",
+    "order": 1,
+    "status": "pending",
+    "notes": "Primary shot task created by the full series collection."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotTaskAId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot task A returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create shot task A uses shot A", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.shot_id).to.equal(bru.getVar("shotAId"));
+    expect(body.asset_id).to.equal(null);
+    expect(body.step_type).to.equal("layout");
+    expect(body.status).to.equal("pending");
+  });
+}

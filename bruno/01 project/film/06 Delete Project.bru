@@ -1,0 +1,29 @@
+meta {
+  name: 06 Delete Project
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/projects/{{projectId}}?force=True
+  body: none
+  auth: none
+}
+
+params:query {
+  force: True
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+script:post-response {
+  bru.setVar("deletedProjectId", bru.getVar("projectId"));
+}
+
+tests {
+  test("delete film project returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

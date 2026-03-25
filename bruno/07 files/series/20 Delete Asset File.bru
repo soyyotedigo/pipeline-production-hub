@@ -1,0 +1,21 @@
+meta {
+  name: 20 Delete Asset File
+  type: http
+  seq: 20
+}
+
+delete {
+  url: {{baseUrl}}/files/{{assetFileId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete asset file returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

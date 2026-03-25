@@ -1,0 +1,45 @@
+meta {
+  name: 03 Create User
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "email": "{{newUserEmail}}",
+    "password": "{{newUserPassword}}",
+    "display_name": "{{newUserDisplayName}}",
+    "timezone": "America/Argentina/Buenos_Aires"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("newUserEmail", `bruno-user-${suffix}@vfxhub.dev`);
+  bru.setVar("newUserPassword", "secret123");
+  bru.setVar("newUserDisplayName", `Bruno User ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("newUserId", res.body.id);
+  }
+}
+
+tests {
+  test("create user returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

@@ -1,0 +1,43 @@
+meta {
+  name: 07 Create Delivery
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/deliveries
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{deliveryName}}",
+    "delivery_date": "2026-03-23",
+    "recipient": "Client A",
+    "notes": "Delivery created by Bruno."
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("deliveryName", `Delivery ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("deliveryId", res.body.id);
+  }
+}
+
+tests {
+  test("create delivery returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

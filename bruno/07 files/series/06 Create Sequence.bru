@@ -1,0 +1,47 @@
+meta {
+  name: 06 Create Sequence
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/sequences
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{sequenceName}}",
+    "code": "{{sequenceCode}}",
+    "episode_id": "{{episodeId}}",
+    "scope_type": "sequence",
+    "status": "active",
+    "description": "Sequence for the files Bruno collection.",
+    "order": 1
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("filesFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("sequenceName", `Sequence ${suffix}`);
+  bru.setVar("sequenceCode", `SQ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("sequenceId", res.body.id);
+  }
+}
+
+tests {
+  test("create sequence returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

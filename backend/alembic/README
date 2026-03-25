@@ -1,0 +1,31 @@
+Alembic - Migrations
+
+FREQUENT COMMANDS
+-----------------
+
+Generate a new migration (review before applying):
+  docker compose exec api alembic revision --autogenerate -m "short_description"
+
+Apply all pending migrations:
+  docker compose exec api alembic upgrade head
+
+View current DB state:
+  docker compose exec api alembic current
+
+View history:
+  docker compose exec api alembic history --verbose
+
+Revert a migration:
+  docker compose exec api alembic downgrade -1
+
+Reset DB (dev only, deletes data):
+  docker compose down -v
+  docker compose up -d
+
+RULES
+-----
+
+- Never edit an already applied migration. Create a new one with autogenerate.
+- Always review the generated file before applying it.
+- Migrations run in CI before tests.
+- The FK to projects.id in user_roles.project_id is added when the Project model is created.

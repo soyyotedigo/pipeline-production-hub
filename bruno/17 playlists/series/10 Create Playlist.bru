@@ -1,0 +1,55 @@
+meta {
+  name: 10 Create Playlist
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/playlists
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_id": "{{projectId}}",
+    "name": "{{playlistName}}",
+    "description": "Playlist created by the full series Bruno collection.",
+    "date": "{{playlistDate}}"
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("playlistFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("playlistFlowSuffix", suffix);
+  bru.setVar("playlistDate", bru.getVar("playlistDate") || new Date().toISOString().slice(0, 10));
+  bru.setVar("playlistName", `Series Playlist ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("playlistId", res.body.id);
+  }
+}
+
+tests {
+  test("create playlist returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create playlist uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.name).to.equal(bru.getVar("playlistName"));
+    expect(body.status).to.equal("draft");
+    expect(body.items).to.be.an("array");
+  });
+}
+

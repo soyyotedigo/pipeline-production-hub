@@ -1,0 +1,57 @@
+meta {
+  name: 09 Create Shot A
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{shotAName}}",
+    "code": "{{shotACode}}",
+    "sequence_id": "{{sequenceAId}}",
+    "frame_start": 1001,
+    "frame_end": 1040,
+    "priority": "normal",
+    "description": "Primary shot for the series full flow."
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("seriesFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("seriesFlowSuffix", suffix);
+  bru.setVar("shotAName", `Shot A ${suffix}`);
+  bru.setVar("shotACode", `SH${suffix}A`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotAId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot A returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create shot A uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.sequence_id).to.equal(bru.getVar("sequenceAId"));
+    expect(body.name).to.equal(bru.getVar("shotAName"));
+    expect(body.code).to.equal(bru.getVar("shotACode"));
+  });
+}

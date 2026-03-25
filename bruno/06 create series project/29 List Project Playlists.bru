@@ -1,0 +1,28 @@
+meta {
+  name: 29 List Project Playlists
+  type: http
+  seq: 29
+}
+
+get {
+  url: {{baseUrl}}/projects/{{projectId}}/playlists
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list project playlists returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list project playlists contains created playlist", function() {
+    const body = res.getBody();
+
+    expect(body.items.some((item) => item.id === bru.getVar("playlistId"))).to.equal(true);
+    expect(body.total).to.be.greaterThan(0);
+  });
+}

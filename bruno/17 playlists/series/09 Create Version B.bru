@@ -1,0 +1,50 @@
+meta {
+  name: 09 Create Version B
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/pipeline-tasks/{{shotTaskBId}}/versions
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "description": "Shot version submitted by the full series collection.",
+    "thumbnail_url": "https://example.com/shot-thumb.jpg",
+    "media_url": "https://example.com/shot-review.mov"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("versionBId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot version returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create shot version uses shot task A", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.shot_id).to.equal(bru.getVar("shotId"));
+    expect(body.asset_id).to.equal(null);
+    expect(body.pipeline_task_id).to.equal(bru.getVar("shotTaskBId"));
+    expect(body.version_number).to.equal(1);
+    expect(body.status).to.equal("pending_review");
+  });
+}
+
+

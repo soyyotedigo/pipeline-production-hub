@@ -1,0 +1,22 @@
+meta {
+  name: 08 Delete Tag
+  type: http
+  seq: 15
+}
+
+delete {
+  url: {{baseUrl}}/tags/{{tagId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete tag returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+

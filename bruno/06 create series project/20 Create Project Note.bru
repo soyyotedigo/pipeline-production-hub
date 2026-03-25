@@ -1,0 +1,44 @@
+meta {
+  name: 20 Create Project Note
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/notes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "subject": "Project kickoff",
+    "body": "Project note created by the full series Bruno collection.",
+    "is_client_visible": false
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("projectNoteId", res.body.id);
+  }
+}
+
+tests {
+  test("create project note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create project note uses project context", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.entity_type).to.equal("project");
+    expect(body.entity_id).to.equal(bru.getVar("projectId"));
+  });
+}

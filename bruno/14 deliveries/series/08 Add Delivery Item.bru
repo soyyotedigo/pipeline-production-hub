@@ -1,0 +1,42 @@
+meta {
+  name: 08 Add Delivery Item
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/deliveries/{{deliveryId}}/items
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "version_id": "{{versionId}}",
+    "notes": "Primary delivery item."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("deliveryItemId", res.body.id);
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("deliveryItemId", res.body.id);
+  }
+}
+
+tests {
+  test("add delivery item returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}
+

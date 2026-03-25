@@ -1,0 +1,38 @@
+meta {
+  name: 06 Create Timelog
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/timelogs
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_id": "{{projectId}}",
+    "pipeline_task_id": "{{taskId}}",
+    "date": "2026-03-23",
+    "duration_minutes": 120,
+    "description": "Bruno timelog entry."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("timelogId", res.body.id);
+  }
+}
+
+tests {
+  test("create timelog returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

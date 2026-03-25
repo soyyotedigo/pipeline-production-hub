@@ -1,0 +1,21 @@
+meta {
+  name: 17 Remove Playlist Item A
+  type: http
+  seq: 17
+}
+
+delete {
+  url: {{baseUrl}}/playlist-items/{{playlistItemAId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("remove playlist item returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

@@ -1,0 +1,28 @@
+meta {
+  name: 08 List Notifications
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/notifications
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{notificationUserAccessToken}}
+}
+
+script:post-response {
+  const items = res.body && res.body.items ? res.body.items : [];
+  if (items.length > 0) {
+    bru.setVar("notificationId", items[0].id);
+  }
+}
+
+tests {
+  test("list notifications returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

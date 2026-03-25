@@ -1,0 +1,21 @@
+meta {
+  name: 14 Remove Delivery Item
+  type: http
+  seq: 14
+}
+
+delete {
+  url: {{baseUrl}}/delivery-items/{{deliveryItemId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("remove delivery item returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

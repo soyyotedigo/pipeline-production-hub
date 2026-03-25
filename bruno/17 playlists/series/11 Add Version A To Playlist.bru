@@ -1,0 +1,45 @@
+meta {
+  name: 11 Add Version A To Playlist
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/playlists/{{playlistId}}/items
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "version_id": "{{versionAId}}"
+  }
+}
+
+script:post-response {
+  const items = res.body && res.body.items ? res.body.items : [];
+
+  if (items.length > 0) {
+    bru.setVar("playlistItemAId", items[items.length - 1].id);
+  }
+}
+
+tests {
+  test("add version A to playlist returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("playlist contains version A", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.equal(bru.getVar("playlistId"));
+    expect(body.items).to.have.length(1);
+    expect(body.items[0].version_id).to.equal(bru.getVar("versionAId"));
+  });
+}
+

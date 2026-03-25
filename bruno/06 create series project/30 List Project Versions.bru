@@ -1,0 +1,30 @@
+meta {
+  name: 30 List Project Versions
+  type: http
+  seq: 30
+}
+
+get {
+  url: {{baseUrl}}/projects/{{projectId}}/versions
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list project versions returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list project versions contains shot and asset versions", function() {
+    const body = res.getBody();
+    const versionIds = body.items.map((item) => item.id);
+
+    expect(versionIds.includes(bru.getVar("shotVersionId"))).to.equal(true);
+    expect(versionIds.includes(bru.getVar("assetVersionId"))).to.equal(true);
+    expect(body.total).to.be.greaterThan(1);
+  });
+}

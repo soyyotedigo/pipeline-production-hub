@@ -1,0 +1,21 @@
+meta {
+  name: 08 Archive Project Note
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/notes/{{projectNoteId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("archive note returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

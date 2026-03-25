@@ -1,0 +1,21 @@
+meta {
+  name: 22 Delete Shot File V1
+  type: http
+  seq: 22
+}
+
+delete {
+  url: {{baseUrl}}/files/{{shotFileV1Id}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete shot file v1 returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

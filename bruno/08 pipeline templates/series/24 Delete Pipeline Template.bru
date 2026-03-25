@@ -1,0 +1,22 @@
+meta {
+  name: 24 Delete Pipeline Template
+  type: http
+  seq: 27
+}
+
+delete {
+  url: {{baseUrl}}/pipeline-templates/{{templateId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete pipeline template returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+

@@ -1,0 +1,25 @@
+meta {
+  name: 25 Hard Delete Asset File
+  type: http
+  seq: 25
+}
+
+delete {
+  url: {{baseUrl}}/files/{{assetFileId}}
+  body: none
+  auth: none
+}
+
+params:query {
+  force: True
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("hard delete asset file returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

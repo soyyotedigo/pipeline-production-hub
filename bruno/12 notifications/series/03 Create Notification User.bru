@@ -1,0 +1,43 @@
+meta {
+  name: 03 Create Notification User
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "email": "{{notificationUserEmail}}",
+    "password": "{{notificationUserPassword}}",
+    "display_name": "{{notificationUserName}}"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+  bru.setVar("notificationUserEmail", `notification-user-${suffix}@vfxhub.dev`);
+  bru.setVar("notificationUserPassword", "secret123");
+  bru.setVar("notificationUserName", `Notification User ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("notificationUserId", res.body.id);
+  }
+}
+
+tests {
+  test("create notification user returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

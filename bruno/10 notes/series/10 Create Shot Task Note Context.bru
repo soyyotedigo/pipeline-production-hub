@@ -1,0 +1,38 @@
+meta {
+  name: 10 Create Shot Task Note Context
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Notes Task",
+    "step_type": "animation",
+    "order": 1,
+    "status": "pending",
+    "notes": "Task created for notes collection."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("pipelineTaskId", res.body.id);
+  }
+}
+
+tests {
+  test("create task context returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

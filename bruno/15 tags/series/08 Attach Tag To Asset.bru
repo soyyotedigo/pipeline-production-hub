@@ -1,0 +1,34 @@
+meta {
+  name: 08 Attach Tag To Asset
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/assets/{{assetId}}/tags
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "tag_id": "{{tagId}}"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("entityTagId", res.body.id);
+  }
+}
+
+tests {
+  test("attach tag to asset returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

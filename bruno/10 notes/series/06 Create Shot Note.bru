@@ -1,0 +1,31 @@
+meta {
+  name: 06 Create Shot Note
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotId}}/notes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_id": "{{projectId}}",
+    "subject": "Shot Note",
+    "body": "Shot note from Bruno.",
+    "is_client_visible": false
+  }
+}
+
+tests {
+  test("create shot note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

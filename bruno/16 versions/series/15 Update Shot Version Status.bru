@@ -1,0 +1,29 @@
+meta {
+  name: 15 Update Shot Version Status
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/versions/{{shotVersionId}}/status
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "status": "approved",
+    "comment": "Approved from Bruno versions collection."
+  }
+}
+
+tests {
+  test("update shot version status returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

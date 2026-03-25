@@ -1,0 +1,33 @@
+meta {
+  name: 07 List Project Assets
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/projects/{{projectId}}/assets?offset=0&limit=20
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list project assets returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list project assets contains the created asset", function() {
+    const body = res.getBody();
+    const assetId = bru.getVar("assetId");
+    const match = body.items.find(function(item) {
+      return item.id === assetId;
+    });
+
+    expect(body.items).to.be.an("array");
+    expect(body.total).to.be.greaterThan(0);
+    expect(match).to.not.equal(undefined);
+  });
+}

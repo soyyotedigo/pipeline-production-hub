@@ -1,0 +1,21 @@
+meta {
+  name: 07 List User Roles
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/users/{{newUserId}}/roles
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list user roles returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

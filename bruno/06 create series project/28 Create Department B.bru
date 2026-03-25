@@ -1,0 +1,53 @@
+meta {
+  name: 28 Create Department B
+  type: http
+  seq: 28
+}
+
+post {
+  url: {{baseUrl}}/departments
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{departmentBName}}",
+    "code": "{{departmentBCode}}",
+    "color": "#22AA66",
+    "description": "Department B created by the full series Bruno collection."
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("seriesFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("seriesFlowSuffix", suffix);
+  bru.setVar("departmentBName", `Series Department B ${suffix}`);
+  bru.setVar("departmentBCode", `DPB${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("departmentBId", res.body.id);
+  }
+}
+
+tests {
+  test("create department B returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create department B uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.name).to.equal(bru.getVar("departmentBName"));
+    expect(body.code).to.equal(bru.getVar("departmentBCode"));
+  });
+}

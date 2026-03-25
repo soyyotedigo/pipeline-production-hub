@@ -1,0 +1,46 @@
+meta {
+  name: 26 Add Asset Version To Playlist
+  type: http
+  seq: 26
+}
+
+post {
+  url: {{baseUrl}}/playlists/{{playlistId}}/items
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "version_id": "{{assetVersionId}}"
+  }
+}
+
+script:post-response {
+  const items = res.body && res.body.items ? res.body.items : [];
+
+  if (items.length > 0) {
+    bru.setVar("playlistItemAssetId", items[items.length - 1].id);
+  }
+}
+
+tests {
+  test("add asset version to playlist returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("playlist contains both versions", function() {
+    const body = res.getBody();
+    const versionIds = body.items.map((item) => item.version_id);
+
+    expect(body.id).to.equal(bru.getVar("playlistId"));
+    expect(body.items).to.have.length(2);
+    expect(versionIds.includes(bru.getVar("shotVersionId"))).to.equal(true);
+    expect(versionIds.includes(bru.getVar("assetVersionId"))).to.equal(true);
+  });
+}

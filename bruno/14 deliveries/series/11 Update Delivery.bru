@@ -1,0 +1,28 @@
+meta {
+  name: 11 Update Delivery
+  type: http
+  seq: 11
+}
+
+patch {
+  url: {{baseUrl}}/deliveries/{{deliveryId}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "notes": "Updated by Bruno deliveries collection."
+  }
+}
+
+tests {
+  test("update delivery returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

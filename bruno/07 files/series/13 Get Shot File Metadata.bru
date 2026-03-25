@@ -1,0 +1,29 @@
+meta {
+  name: 13 Get Shot File Metadata
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/files/{{shotFileV2Id}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("get shot file metadata returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("get shot file metadata returns latest version", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.equal(bru.getVar("shotFileV2Id"));
+    expect(body.shot_id).to.equal(bru.getVar("shotId"));
+    expect(body.version).to.equal(2);
+  });
+}

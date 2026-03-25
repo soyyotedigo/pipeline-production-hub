@@ -1,0 +1,36 @@
+meta {
+  name: 20 Update Standalone Shot Task Status
+  type: http
+  seq: 20
+}
+
+patch {
+  url: {{baseUrl}}/pipeline-tasks/{{standaloneShotTaskId}}/status
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "status": "in_progress",
+    "comment": "Started from Bruno collection."
+  }
+}
+
+tests {
+  test("update standalone shot task status returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("update standalone shot task status returns transition", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.equal(bru.getVar("standaloneShotTaskId"));
+    expect(body.new_status).to.equal("in_progress");
+  });
+}

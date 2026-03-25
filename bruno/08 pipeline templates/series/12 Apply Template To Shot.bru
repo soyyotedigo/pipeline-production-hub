@@ -1,0 +1,47 @@
+meta {
+  name: 12 Apply Template To Shot
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/pipeline-templates/{{templateId}}/apply
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "entity_type": "shot",
+    "entity_id": "{{shotId}}"
+  }
+}
+
+script:post-response {
+  const tasks = res.body && res.body.tasks ? res.body.tasks : [];
+
+  if (tasks.length > 0) {
+    bru.setVar("appliedShotTaskId", tasks[0].id);
+  }
+}
+
+tests {
+  test("apply template to shot returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("apply template to shot creates two tasks", function() {
+    const body = res.getBody();
+
+    expect(body.template_id).to.equal(bru.getVar("templateId"));
+    expect(body.entity_type).to.equal("shot");
+    expect(body.entity_id).to.equal(bru.getVar("shotId"));
+    expect(body.tasks_created).to.equal(2);
+    expect(body.tasks).to.have.length(2);
+  });
+}

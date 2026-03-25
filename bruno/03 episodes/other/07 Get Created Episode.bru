@@ -1,0 +1,21 @@
+meta {
+  name: 07 Get Created Episode
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/episodes/{{episodeId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("get episode returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

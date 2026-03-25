@@ -1,0 +1,37 @@
+meta {
+  name: 05 Create Task
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Timelog Task",
+    "step_type": "layout",
+    "order": 1,
+    "status": "pending"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("taskId", res.body.id);
+  }
+}
+
+tests {
+  test("create task returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

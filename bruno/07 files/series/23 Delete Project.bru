@@ -1,0 +1,26 @@
+meta {
+  name: 23 Delete Project
+  type: http
+  seq: 26
+}
+
+delete {
+  url: {{baseUrl}}/projects/{{projectId}}?force=True
+  body: none
+  auth: none
+}
+
+params:query {
+  force: True
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete project returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+

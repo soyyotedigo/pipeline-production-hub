@@ -1,0 +1,21 @@
+meta {
+  name: 12 Remove Department Member
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{baseUrl}}/department-members/{{departmentMemberId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("remove department member returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

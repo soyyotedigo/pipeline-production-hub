@@ -1,0 +1,33 @@
+meta {
+  name: 08 List Project Sequences
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/projects/{{projectId}}/sequences?offset=0&limit=20
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list project sequences returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list project sequences contains the created sequence", function() {
+    const body = res.getBody();
+    const sequenceId = bru.getVar("sequenceId");
+    const match = body.items.find(function(item) {
+      return item.id === sequenceId;
+    });
+
+    expect(body.items).to.be.an("array");
+    expect(body.total).to.be.greaterThan(0);
+    expect(match).to.not.equal(undefined);
+  });
+}

@@ -1,0 +1,38 @@
+meta {
+  name: 13 Scaffold Project
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/scaffold
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {}
+}
+
+tests {
+  test("scaffold returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("scaffold includes created series structure", function() {
+    const body = res.getBody();
+
+    expect(body.project_code).to.equal(bru.getVar("projectCode"));
+    expect(body.created_dirs).to.be.an("array");
+    expect(body.created_dirs.some((dir) => dir.includes(bru.getVar("episodeACode")))).to.equal(true);
+    expect(body.created_dirs.some((dir) => dir.includes(bru.getVar("sequenceACode")))).to.equal(true);
+    expect(body.created_dirs.some((dir) => dir.includes(bru.getVar("shotACode")))).to.equal(true);
+    expect(body.created_dirs.some((dir) => dir.includes(bru.getVar("assetACode")))).to.equal(true);
+    expect(body.total).to.be.greaterThan(0);
+  });
+}

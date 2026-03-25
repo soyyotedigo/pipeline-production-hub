@@ -1,0 +1,28 @@
+meta {
+  name: 12 Update Delivery Status
+  type: http
+  seq: 12
+}
+
+patch {
+  url: {{baseUrl}}/deliveries/{{deliveryId}}/status
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "status": "sent"
+  }
+}
+
+tests {
+  test("update delivery status returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

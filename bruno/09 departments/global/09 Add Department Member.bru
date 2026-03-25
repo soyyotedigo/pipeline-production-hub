@@ -1,0 +1,34 @@
+meta {
+  name: 09 Add Department Member
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/departments/{{departmentId}}/members
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "user_id": "{{departmentUserId}}"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("departmentMemberId", res.body.id);
+  }
+}
+
+tests {
+  test("add department member returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

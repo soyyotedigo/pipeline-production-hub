@@ -1,0 +1,33 @@
+meta {
+  name: 03 Refresh Access Token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "refresh_token": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.access_token) {
+    bru.setVar("refreshedAccessToken", res.body.access_token);
+  }
+}
+
+tests {
+  test("refresh returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

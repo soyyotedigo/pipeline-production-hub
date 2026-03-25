@@ -1,0 +1,61 @@
+meta {
+  name: 07 Create Asset B
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/assets
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{assetBName}}",
+    "code": "{{assetBCode}}",
+    "asset_type": "character",
+    "description": "Temporary asset created by the assets Bruno collection.",
+    "priority": "normal"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("assetBName", `Asset ${suffix}`);
+  bru.setVar("assetBCode", `AS${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetBId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create asset returns id", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+  });
+
+  test("create asset uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.name).to.equal(bru.getVar("assetBName"));
+    expect(body.code).to.equal(bru.getVar("assetBCode"));
+    expect(body.asset_type).to.equal("character");
+  });
+}
+

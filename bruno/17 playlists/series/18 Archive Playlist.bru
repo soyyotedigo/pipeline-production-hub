@@ -1,0 +1,21 @@
+meta {
+  name: 18 Archive Playlist
+  type: http
+  seq: 18
+}
+
+delete {
+  url: {{baseUrl}}/playlists/{{playlistId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("archive playlist returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

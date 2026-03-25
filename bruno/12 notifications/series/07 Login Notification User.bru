@@ -1,0 +1,30 @@
+meta {
+  name: 07 Login Notification User
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{notificationUserEmail}}",
+    "password": "{{notificationUserPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.access_token) {
+    bru.setVar("notificationUserAccessToken", res.body.access_token);
+  }
+}
+
+tests {
+  test("notification user login returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

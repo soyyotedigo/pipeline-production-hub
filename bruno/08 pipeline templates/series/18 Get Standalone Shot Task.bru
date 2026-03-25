@@ -1,0 +1,29 @@
+meta {
+  name: 18 Get Standalone Shot Task
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{baseUrl}}/pipeline-tasks/{{standaloneShotTaskId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("get standalone shot task returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("get standalone shot task returns created task", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.equal(bru.getVar("standaloneShotTaskId"));
+    expect(body.shot_id).to.equal(bru.getVar("shotId"));
+    expect(body.step_type).to.equal("animation");
+  });
+}

@@ -1,0 +1,55 @@
+meta {
+  name: 05 Create Episode A
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/episodes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{episodeAName}}",
+    "code": "{{episodeACode}}",
+    "status": "active",
+    "description": "Primary episode for the series full flow.",
+    "order": 1
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("seriesFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("seriesFlowSuffix", suffix);
+  bru.setVar("episodeAName", `Episode A ${suffix}`);
+  bru.setVar("episodeACode", `EP${suffix}A`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("episodeAId", res.body.id);
+  }
+}
+
+tests {
+  test("create episode A returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create episode A uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.name).to.equal(bru.getVar("episodeAName"));
+    expect(body.code).to.equal(bru.getVar("episodeACode"));
+    expect(body.status).to.equal("active");
+  });
+}

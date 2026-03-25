@@ -1,0 +1,21 @@
+meta {
+  name: 14 Get Project Note Thread
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/notes/{{projectNoteId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("get project note thread returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

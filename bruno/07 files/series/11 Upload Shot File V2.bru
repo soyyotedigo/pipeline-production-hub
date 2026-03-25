@@ -1,0 +1,41 @@
+meta {
+  name: 11 Upload Shot File V2
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/files/upload
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+body:multipart-form {
+  upload: @file(./series/fixtures/shot-review.exr)
+  shot_id: {{shotId}}
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotFileV2Id", res.body.id);
+  }
+}
+
+tests {
+  test("upload shot file v2 returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("upload shot file v2 increments version", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.shot_id).to.equal(bru.getVar("shotId"));
+    expect(body.original_name).to.equal("shot-review.exr");
+    expect(body.version).to.equal(2);
+  });
+}

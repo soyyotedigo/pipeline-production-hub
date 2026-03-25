@@ -1,0 +1,77 @@
+meta {
+  name: 09 Create Pipeline Template
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/pipeline-templates
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_type": "series",
+    "name": "{{templateName}}",
+    "description": "Template created by the Bruno pipeline collection.",
+    "steps": [
+      {
+        "step_name": "Shot Layout",
+        "step_type": "layout",
+        "order": 1,
+        "applies_to": "shot"
+      },
+      {
+        "step_name": "Shot Lighting",
+        "step_type": "lighting",
+        "order": 2,
+        "applies_to": "shot"
+      },
+      {
+        "step_name": "Asset Modeling",
+        "step_type": "modeling",
+        "order": 1,
+        "applies_to": "asset"
+      },
+      {
+        "step_name": "Asset Texture",
+        "step_type": "texture",
+        "order": 2,
+        "applies_to": "asset"
+      }
+    ]
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("pipelineFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("templateName", `Series Template ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("templateId", res.body.id);
+  }
+}
+
+tests {
+  test("create pipeline template returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create pipeline template returns expected shape", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.project_type).to.equal("series");
+    expect(body.name).to.equal(bru.getVar("templateName"));
+    expect(body.steps).to.have.length(4);
+  });
+}

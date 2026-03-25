@@ -1,0 +1,29 @@
+meta {
+  name: 15 List Shot Files
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/shots/{{shotId}}/files
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list shot files returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list shot files returns latest shot version only", function() {
+    const body = res.getBody();
+
+    expect(body.total).to.equal(1);
+    expect(body.items[0].id).to.equal(bru.getVar("shotFileV2Id"));
+    expect(body.items[0].version).to.equal(2);
+  });
+}

@@ -1,0 +1,29 @@
+meta {
+  name: 16 List Asset Files
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/assets/{{assetId}}/files
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list asset files returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list asset files contains created asset file", function() {
+    const body = res.getBody();
+
+    expect(body.total).to.equal(1);
+    expect(body.items[0].id).to.equal(bru.getVar("assetFileId"));
+    expect(body.items[0].asset_id).to.equal(bru.getVar("assetId"));
+  });
+}

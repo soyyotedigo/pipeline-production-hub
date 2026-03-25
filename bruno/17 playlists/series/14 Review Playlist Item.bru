@@ -1,0 +1,30 @@
+meta {
+  name: 14 Review Playlist Item
+  type: http
+  seq: 14
+}
+
+patch {
+  url: {{baseUrl}}/playlist-items/{{playlistItemBId}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "review_status": "approved",
+    "reviewer_notes": "Approved from Bruno playlist collection.",
+    "propagate_to_version": true
+  }
+}
+
+tests {
+  test("review playlist item returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

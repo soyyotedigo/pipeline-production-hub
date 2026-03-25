@@ -1,0 +1,44 @@
+meta {
+  name: 03 Create Project
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/projects
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{projectName}}",
+    "code": "{{projectCode}}",
+    "client": "notes",
+    "project_type": "series"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("projectName", `Series Notes ${suffix}`);
+  bru.setVar("projectCode", `CNT${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("projectId", res.body.id);
+  }
+}
+
+tests {
+  test("create project returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

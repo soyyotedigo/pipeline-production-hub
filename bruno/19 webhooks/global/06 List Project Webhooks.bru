@@ -1,0 +1,21 @@
+meta {
+  name: 06 List Project Webhooks
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/projects/{{projectId}}/webhooks
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list project webhooks returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

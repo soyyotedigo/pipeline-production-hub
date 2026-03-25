@@ -1,0 +1,48 @@
+meta {
+  name: 19 Create Asset Version
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{baseUrl}}/pipeline-tasks/{{assetTaskAId}}/versions
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "description": "Asset version submitted by the full series collection.",
+    "thumbnail_url": "https://example.com/asset-thumb.jpg",
+    "media_url": "https://example.com/asset-review.mov"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("assetVersionId", res.body.id);
+  }
+}
+
+tests {
+  test("create asset version returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create asset version uses asset task A", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.shot_id).to.equal(null);
+    expect(body.asset_id).to.equal(bru.getVar("assetAId"));
+    expect(body.pipeline_task_id).to.equal(bru.getVar("assetTaskAId"));
+    expect(body.version_number).to.equal(1);
+    expect(body.status).to.equal("pending_review");
+  });
+}

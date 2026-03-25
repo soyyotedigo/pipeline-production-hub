@@ -1,0 +1,42 @@
+meta {
+  name: 08 Create Member User
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "email": "{{departmentUserEmail}}",
+    "password": "secret123",
+    "display_name": "{{departmentUserName}}"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+  bru.setVar("departmentUserEmail", `department-user-${suffix}@vfxhub.dev`);
+  bru.setVar("departmentUserName", `Department User ${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("departmentUserId", res.body.id);
+  }
+}
+
+tests {
+  test("create department member user returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

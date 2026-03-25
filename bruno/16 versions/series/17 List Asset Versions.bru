@@ -1,0 +1,21 @@
+meta {
+  name: 17 List Asset Versions
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/assets/{{assetId}}/versions
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list asset versions returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

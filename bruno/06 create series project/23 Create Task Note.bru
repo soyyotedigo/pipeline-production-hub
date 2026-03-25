@@ -1,0 +1,45 @@
+meta {
+  name: 23 Create Task Note
+  type: http
+  seq: 23
+}
+
+post {
+  url: {{baseUrl}}/pipeline-tasks/{{shotTaskAId}}/notes
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "project_id": "{{projectId}}",
+    "subject": "Task handoff",
+    "body": "Task note created by the full series Bruno collection.",
+    "is_client_visible": false
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("taskNoteId", res.body.id);
+  }
+}
+
+tests {
+  test("create task note returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("create task note uses pipeline task context", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.entity_type).to.equal("pipeline_task");
+    expect(body.entity_id).to.equal(bru.getVar("shotTaskAId"));
+  });
+}

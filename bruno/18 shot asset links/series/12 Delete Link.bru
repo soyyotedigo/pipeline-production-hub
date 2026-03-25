@@ -1,0 +1,21 @@
+meta {
+  name: 12 Delete Link
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{baseUrl}}/shot-asset-links/{{shotAssetLinkId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete link returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

@@ -1,0 +1,39 @@
+meta {
+  name: 06 Create Assigned Task
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotId}}/tasks
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "step_name": "Notification Task",
+    "step_type": "animation",
+    "order": 1,
+    "status": "pending",
+    "assigned_to": "{{notificationUserId}}",
+    "notes": "Task assigned to generate a notification."
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("pipelineTaskId", res.body.id);
+  }
+}
+
+tests {
+  test("create assigned task returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

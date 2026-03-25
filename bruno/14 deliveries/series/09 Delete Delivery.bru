@@ -1,0 +1,22 @@
+meta {
+  name: 09 Delete Delivery
+  type: http
+  seq: 15
+}
+
+delete {
+  url: {{baseUrl}}/deliveries/{{deliveryId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete delivery returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+

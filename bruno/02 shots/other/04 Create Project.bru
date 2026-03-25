@@ -1,0 +1,59 @@
+meta {
+  name: 04 Create Project
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/projects
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{projectName}}",
+    "code": "{{projectCode}}",
+    "client": "assets",
+    "project_type": "other",
+    "description": "Temporary other project for the assets Bruno collection."
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("projectName", `Other Assets ${suffix}`);
+  bru.setVar("projectCode", `BAO${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("projectId", res.body.id);
+  }
+}
+
+tests {
+  test("create project returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create project returns id", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.be.a("string");
+  });
+
+  test("create project uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.name).to.equal(bru.getVar("projectName"));
+    expect(body.code).to.equal(bru.getVar("projectCode"));
+    expect(body.project_type).to.equal("other");
+  });
+}

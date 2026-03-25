@@ -1,0 +1,29 @@
+meta {
+  name: 31 List Departments
+  type: http
+  seq: 31
+}
+
+get {
+  url: {{baseUrl}}/departments
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list departments returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("list departments contains created departments", function() {
+    const body = res.getBody();
+    const departmentIds = body.items.map((item) => item.id);
+
+    expect(departmentIds.includes(bru.getVar("departmentAId"))).to.equal(true);
+    expect(departmentIds.includes(bru.getVar("departmentBId"))).to.equal(true);
+  });
+}

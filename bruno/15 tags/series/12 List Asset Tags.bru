@@ -1,0 +1,21 @@
+meta {
+  name: 12 List Asset Tags
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/assets/{{assetId}}/tags
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list asset tags returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

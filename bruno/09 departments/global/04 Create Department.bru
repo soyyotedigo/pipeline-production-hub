@@ -1,0 +1,44 @@
+meta {
+  name: 04 Create Department
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/departments
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{departmentName}}",
+    "code": "{{departmentCode}}",
+    "color": "#2277CC",
+    "description": "Temporary department created by Bruno."
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("departmentName", `Department ${suffix}`);
+  bru.setVar("departmentCode", `DEP${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("departmentId", res.body.id);
+  }
+}
+
+tests {
+  test("create department returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

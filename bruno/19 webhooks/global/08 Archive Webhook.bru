@@ -1,0 +1,21 @@
+meta {
+  name: 08 Archive Webhook
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/webhooks/{{webhookId}}/archive
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("archive webhook returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

@@ -1,0 +1,37 @@
+meta {
+  name: 06 Scaffold Project
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/scaffold
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {}
+}
+
+tests {
+  test("scaffold project returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("scaffold project matches created sequence", function() {
+    const body = res.getBody();
+
+    expect(body.project_code).to.equal(bru.getVar("projectCode"));
+    expect(body.created_dirs).to.be.an("array");
+    expect(body.total).to.be.greaterThan(0);
+    expect(body.created_dirs.some(function(path) {
+      return path.includes(bru.getVar("sequenceCode"));
+    })).to.equal(true);
+  });
+}

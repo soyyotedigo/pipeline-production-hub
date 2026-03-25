@@ -1,0 +1,37 @@
+meta {
+  name: 09 Bulk Link Assets To Shot
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/shots/{{shotId}}/assets/bulk
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "links": [
+      {
+        "asset_id": "{{assetAId}}",
+        "link_type": "uses"
+      },
+      {
+        "asset_id": "{{assetBId}}",
+        "link_type": "uses"
+      }
+    ]
+  }
+}
+
+tests {
+  test("bulk link assets returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

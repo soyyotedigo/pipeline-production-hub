@@ -1,0 +1,21 @@
+meta {
+  name: 22 Delete Standalone Shot Task
+  type: http
+  seq: 22
+}
+
+delete {
+  url: {{baseUrl}}/pipeline-tasks/{{standaloneShotTaskId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("delete standalone shot task returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

@@ -1,0 +1,35 @@
+meta {
+  name: 19 Update Standalone Shot Task
+  type: http
+  seq: 19
+}
+
+patch {
+  url: {{baseUrl}}/pipeline-tasks/{{standaloneShotTaskId}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "notes": "Updated standalone shot task by Bruno."
+  }
+}
+
+tests {
+  test("update standalone shot task returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("update standalone shot task persists notes", function() {
+    const body = res.getBody();
+
+    expect(body.id).to.equal(bru.getVar("standaloneShotTaskId"));
+    expect(body.notes).to.equal("Updated standalone shot task by Bruno.");
+  });
+}

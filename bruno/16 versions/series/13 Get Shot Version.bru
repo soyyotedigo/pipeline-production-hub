@@ -1,0 +1,21 @@
+meta {
+  name: 13 Get Shot Version
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/versions/{{shotVersionId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("get shot version returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

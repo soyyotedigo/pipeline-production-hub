@@ -1,0 +1,41 @@
+meta {
+  name: 05 Create Project Tag
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/tags
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{tagName}}",
+    "color": "#FF8800"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("tagName", `tag-${suffix}`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("tagId", res.body.id);
+  }
+}
+
+tests {
+  test("create tag returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

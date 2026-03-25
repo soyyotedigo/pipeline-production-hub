@@ -1,0 +1,55 @@
+meta {
+  name: 05 Create Shot
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{shotName}}",
+    "code": "{{shotCode}}",
+    "frame_start": 1001,
+    "frame_end": 1040,
+    "description": "Temporary shot created by the Bruno shots collection.",
+    "priority": "normal"
+  }
+}
+
+script:pre-request {
+  const suffix = Date.now().toString().slice(-6);
+
+  bru.setVar("shotName", Shot );
+  bru.setVar("shotCode", SH);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("shotId", res.body.id);
+  }
+}
+
+tests {
+  test("create shot returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create shot uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.name).to.equal(bru.getVar("shotName"));
+    expect(body.code).to.equal(bru.getVar("shotCode"));
+    expect(body.status).to.equal("pending");
+  });
+}

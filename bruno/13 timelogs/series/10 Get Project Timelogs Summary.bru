@@ -1,0 +1,21 @@
+meta {
+  name: 10 Get Project Timelogs Summary
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/projects/{{projectId}}/timelogs/summary
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("get project timelog summary returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

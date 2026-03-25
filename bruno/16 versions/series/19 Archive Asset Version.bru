@@ -1,0 +1,21 @@
+meta {
+  name: 19 Archive Asset Version
+  type: http
+  seq: 19
+}
+
+delete {
+  url: {{baseUrl}}/versions/{{assetVersionId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("archive asset version returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

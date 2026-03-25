@@ -1,0 +1,59 @@
+meta {
+  name: 06 Create Sequence
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/projects/{{projectId}}/sequences
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "{{sequenceName}}",
+    "code": "{{sequenceCode}}",
+    "episode_id": "{{episodeId}}",
+    "scope_type": "sequence",
+    "status": "active",
+    "description": "Version flow sequence.",
+    "order": 1
+  }
+}
+
+script:pre-request {
+  const suffix = bru.getVar("seriesFlowSuffix") || Date.now().toString().slice(-6);
+
+  bru.setVar("seriesFlowSuffix", suffix);
+  bru.setVar("sequenceName", `Sequence A ${suffix}`);
+  bru.setVar("sequenceCode", `SQ${suffix}A`);
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("sequenceId", res.body.id);
+  }
+}
+
+tests {
+  test("create sequence A returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("create sequence A uses generated values", function() {
+    const body = res.getBody();
+
+    expect(body.project_id).to.equal(bru.getVar("projectId"));
+    expect(body.episode_id).to.equal(bru.getVar("episodeId"));
+    expect(body.name).to.equal(bru.getVar("sequenceName"));
+    expect(body.code).to.equal(bru.getVar("sequenceCode"));
+    expect(body.scope_type).to.equal("sequence");
+  });
+}
+

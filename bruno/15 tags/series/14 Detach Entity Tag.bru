@@ -1,0 +1,21 @@
+meta {
+  name: 14 Detach Entity Tag
+  type: http
+  seq: 14
+}
+
+delete {
+  url: {{baseUrl}}/entity-tags/{{entityTagId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("detach entity tag returns 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

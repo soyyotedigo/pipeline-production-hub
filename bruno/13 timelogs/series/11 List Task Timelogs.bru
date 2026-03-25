@@ -1,0 +1,21 @@
+meta {
+  name: 11 List Task Timelogs
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/tasks/{{pipelineTaskId}}/timelogs
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+tests {
+  test("list task timelogs returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

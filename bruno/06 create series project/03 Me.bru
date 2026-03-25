@@ -1,0 +1,27 @@
+meta {
+  name: 03 Me
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+script:post-response {
+  if (res.body && res.body.id) {
+    bru.setVar("currentUserId", res.body.id);
+  }
+}
+
+tests {
+  test("me returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
