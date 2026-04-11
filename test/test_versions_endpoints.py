@@ -134,7 +134,7 @@ async def _create_pipeline_task_via_api(
     headers: dict[str, str],
 ) -> dict:
     resp = await client.post(
-        f"/shots/{shot_id}/tasks",
+        f"/api/v1/shots/{shot_id}/tasks",
         json={"step_name": "Compositing", "step_type": "compositing", "order": 1},
         headers=headers,
     )
@@ -152,7 +152,9 @@ async def _create_version_via_api(
     payload: dict = {}
     if description:
         payload["description"] = description
-    resp = await client.post(f"/pipeline-tasks/{task_id}/versions", json=payload, headers=headers)
+    resp = await client.post(
+        f"/api/v1/pipeline-tasks/{task_id}/versions", json=payload, headers=headers
+    )
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -176,7 +178,7 @@ class TestCreateVersion:
         task = await _create_pipeline_task_via_api(client, shot.id, headers)
 
         resp = await client.post(
-            f"/pipeline-tasks/{task['id']}/versions",
+            f"/api/v1/pipeline-tasks/{task['id']}/versions",
             json={"description": "First submission"},
             headers=headers,
         )
@@ -217,7 +219,7 @@ class TestCreateVersion:
         shot = await _create_shot(db_session, project)
         task = await _create_pipeline_task_via_api(client, shot.id, _auth_headers(admin))
 
-        resp = await client.post(f"/pipeline-tasks/{task['id']}/versions", json={})
+        resp = await client.post(f"/api/v1/pipeline-tasks/{task['id']}/versions", json={})
 
         assert resp.status_code == 401
 
@@ -241,7 +243,7 @@ class TestGetUpdateVersion:
         task = await _create_pipeline_task_via_api(client, shot.id, headers)
         version = await _create_version_via_api(client, task["id"], headers)
 
-        resp = await client.get(f"/versions/{version['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/versions/{version['id']}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["id"] == version["id"]
@@ -254,7 +256,7 @@ class TestGetUpdateVersion:
         admin = await _create_user(db_session, "admin-get404@ver.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/versions/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(f"/api/v1/versions/{uuid.uuid4()}", headers=_auth_headers(admin))
 
         assert resp.status_code == 404
 
@@ -272,7 +274,7 @@ class TestGetUpdateVersion:
         version = await _create_version_via_api(client, task["id"], headers)
 
         resp = await client.patch(
-            f"/versions/{version['id']}",
+            f"/api/v1/versions/{version['id']}",
             json={"description": "Updated description"},
             headers=headers,
         )
@@ -293,7 +295,7 @@ class TestGetUpdateVersion:
         task = await _create_pipeline_task_via_api(client, shot.id, headers)
         version = await _create_version_via_api(client, task["id"], headers)
 
-        resp = await client.delete(f"/versions/{version['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/versions/{version['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -318,7 +320,7 @@ class TestVersionStatus:
         version = await _create_version_via_api(client, task["id"], headers)
 
         resp = await client.patch(
-            f"/versions/{version['id']}/status",
+            f"/api/v1/versions/{version['id']}/status",
             json={"status": "approved"},
             headers=headers,
         )
@@ -342,7 +344,7 @@ class TestVersionStatus:
         version = await _create_version_via_api(client, task["id"], headers)
 
         resp = await client.patch(
-            f"/versions/{version['id']}/status",
+            f"/api/v1/versions/{version['id']}/status",
             json={"status": "revision_requested", "comment": "Please fix the lighting"},
             headers=headers,
         )
@@ -372,7 +374,7 @@ class TestListVersions:
         await _create_version_via_api(client, task["id"], headers)
         await _create_version_via_api(client, task["id"], headers)
 
-        resp = await client.get(f"/pipeline-tasks/{task['id']}/versions", headers=headers)
+        resp = await client.get(f"/api/v1/pipeline-tasks/{task['id']}/versions", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -391,7 +393,7 @@ class TestListVersions:
         task = await _create_pipeline_task_via_api(client, shot.id, headers)
         await _create_version_via_api(client, task["id"], headers)
 
-        resp = await client.get(f"/shots/{shot.id}/versions", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/versions", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -409,7 +411,7 @@ class TestListVersions:
         task = await _create_pipeline_task_via_api(client, shot.id, headers)
         await _create_version_via_api(client, task["id"], headers)
 
-        resp = await client.get(f"/projects/{project.id}/versions", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/versions", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1

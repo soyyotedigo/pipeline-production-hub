@@ -441,7 +441,91 @@ GET    /users/{id}/timelogs?date_from=&date_to=
 
 ---
 
-## 10. Deliveries
+## 10. Shot and Asset Workflow
+
+Shots and assets share an identical status state machine. Status transitions are enforced by dedicated services — `ShotWorkflowService` and `AssetWorkflowService` — which also write to the `status_logs` audit table and fire `status.changed` webhook events.
+
+### Status state machine (shots and assets)
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending : created
+    pending --> in_progress : start work
+    pending --> on_hold
+    pending --> omitted
+
+    in_progress --> review : submit for review
+    in_progress --> on_hold
+    in_progress --> omitted
+
+    review --> revision : changes requested
+    review --> on_hold
+
+    revision --> in_progress : artist resumes
+    revision --> approved : lead approves
+    revision --> on_hold
+
+    approved --> revision : reopen
+    approved --> delivered
+    approved --> final
+
+    delivered --> final
+
+    on_hold --> pending
+    on_hold --> in_progress
+
+    omitted --> [*]
+    final --> [*]
+```
+
+### RBAC on transitions
+
+| Transition | Required roles |
+|------------|---------------|
+| `pending → in_progress` | `artist`, `lead`, `supervisor`, `admin` |
+| `in_progress → review` | `artist`, `lead`, `supervisor`, `admin` |
+| `review → revision` | `lead`, `supervisor`, `admin` |
+| `review → on_hold` | `lead`, `supervisor`, `admin` |
+| `revision → approved` | `lead`, `supervisor`, `admin` |
+| Any `→ omitted` | `supervisor`, `admin` |
+| Any `→ final` | `supervisor`, `admin` |
+
+The full rule set is defined in the service methods. All state changes are recorded in the `status_logs` table.
+
+### Key endpoints
+
+```
+PATCH /shots/{id}/status
+GET   /shots/{id}/status-history
+
+PATCH /assets/{id}/status
+GET   /assets/{id}/status-history
+```
+
+---
+
+## 11. Code Generator
+
+`services/code_generator.py` provides automatic code generation for production entities. Codes follow project-level naming rules that can be overridden per project (`naming_rules` JSON field on `projects`).
+
+### Default naming rules
+
+| Entity | Template | Example |
+|--------|----------|---------|
+| Episode | `EP{production_number:03d}` | `EP005` |
+| Sequence | `SQ{production_number:04d}` | `SQ0008` |
+| Shot | `{sequence_code}_SH{order:04d}0` | `SQ0080_SH0030` |
+| Asset | `{SANITIZED_NAME}` | `HERO_ROBOT` |
+
+Shot order increments by 10, leaving gaps for insertion. Asset names are sanitized: unicode normalized → ASCII → uppercased → non-alphanumeric characters replaced with `_`.
+
+### Customization
+
+Project-level overrides are stored in `projects.naming_rules` (JSONB). Any rule key can be overridden per project. The `get_naming_rules()` helper merges project rules on top of the defaults.
+
+---
+
+## 12. Deliveries
 
 Tracks the full lifecycle of client deliveries — from preparation to client acceptance.
 

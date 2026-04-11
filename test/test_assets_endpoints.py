@@ -81,7 +81,7 @@ async def test_project_assets_crud_filters_asset_status_and_overview(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Assets Project", "code": "AST23"},
         headers=_auth_headers(admin),
     )
@@ -91,7 +91,7 @@ async def test_project_assets_crud_filters_asset_status_and_overview(
     await _assign_role(db_session, artist.id, RoleName.artist, uuid.UUID(project_id))
 
     create_asset = await client.post(
-        f"/projects/{project_id}/assets",
+        f"/api/v1/projects/{project_id}/assets",
         json={
             "name": "Dragon",
             "asset_type": "character",
@@ -105,7 +105,7 @@ async def test_project_assets_crud_filters_asset_status_and_overview(
     assert create_asset_payload["code"] == "DRAGON"
 
     patch_asset = await client.patch(
-        f"/assets/{asset_id}",
+        f"/api/v1/assets/{asset_id}",
         json={"name": "Dragon Hero", "asset_type": "character"},
         headers=_auth_headers(lead),
     )
@@ -113,21 +113,21 @@ async def test_project_assets_crud_filters_asset_status_and_overview(
     assert patch_asset.json()["name"] == "Dragon Hero"
 
     to_in_progress = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "in_progress", "comment": "start asset"},
         headers=_auth_headers(artist),
     )
     assert to_in_progress.status_code == 200
 
     to_review = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "review", "comment": "ready for lead"},
         headers=_auth_headers(artist),
     )
     assert to_review.status_code == 200
 
     list_assets = await client.get(
-        f"/projects/{project_id}/assets?status=review&assigned_to={artist.id}&asset_type=character",
+        f"/api/v1/projects/{project_id}/assets?status=review&assigned_to={artist.id}&asset_type=character",
         headers=_auth_headers(lead),
     )
     assert list_assets.status_code == 200
@@ -135,7 +135,9 @@ async def test_project_assets_crud_filters_asset_status_and_overview(
     assert asset_payload["total"] == 1
     assert asset_payload["items"][0]["id"] == asset_id
 
-    overview = await client.get(f"/projects/{project_id}/overview", headers=_auth_headers(artist))
+    overview = await client.get(
+        f"/api/v1/projects/{project_id}/overview", headers=_auth_headers(artist)
+    )
     assert overview.status_code == 200
     overview_payload = overview.json()
     assert overview_payload["project_id"] == project_id
@@ -154,7 +156,7 @@ async def test_asset_archive_restore_and_force_delete(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     project_resp = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Lifecycle Asset", "code": "LAS23"},
         headers=_auth_headers(admin),
     )
@@ -163,29 +165,33 @@ async def test_asset_archive_restore_and_force_delete(
     await _assign_role(db_session, lead.id, RoleName.lead, uuid.UUID(project_id))
 
     asset_resp = await client.post(
-        f"/projects/{project_id}/assets",
+        f"/api/v1/projects/{project_id}/assets",
         json={"name": "Asset Life", "asset_type": "prop"},
         headers=_auth_headers(lead),
     )
     assert asset_resp.status_code == 200
     asset_id = asset_resp.json()["id"]
 
-    archive_asset = await client.post(f"/assets/{asset_id}/archive", headers=_auth_headers(lead))
+    archive_asset = await client.post(
+        f"/api/v1/assets/{asset_id}/archive", headers=_auth_headers(lead)
+    )
     assert archive_asset.status_code == 200
     assert archive_asset.json()["archived_at"] is not None
 
-    restore_asset = await client.post(f"/assets/{asset_id}/restore", headers=_auth_headers(lead))
+    restore_asset = await client.post(
+        f"/api/v1/assets/{asset_id}/restore", headers=_auth_headers(lead)
+    )
     assert restore_asset.status_code == 200
     assert restore_asset.json()["archived_at"] is None
 
     deny_asset_delete = await client.delete(
-        f"/assets/{asset_id}?force=true",
+        f"/api/v1/assets/{asset_id}?force=true",
         headers=_auth_headers(lead),
     )
     assert deny_asset_delete.status_code == 403
 
     allow_asset_delete = await client.delete(
-        f"/assets/{asset_id}?force=true",
+        f"/api/v1/assets/{asset_id}?force=true",
         headers=_auth_headers(admin),
     )
     assert allow_asset_delete.status_code == 204
@@ -202,7 +208,7 @@ async def test_asset_status_delivered_requires_admin(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Deliver Asset Project", "code": "DEL23"},
         headers=_auth_headers(admin),
     )
@@ -212,57 +218,57 @@ async def test_asset_status_delivered_requires_admin(
     await _assign_role(db_session, artist.id, RoleName.artist, uuid.UUID(project_id))
 
     create_asset = await client.post(
-        f"/projects/{project_id}/assets",
+        f"/api/v1/projects/{project_id}/assets",
         json={"name": "Spaceship", "asset_type": "prop", "assigned_to": str(artist.id)},
         headers=_auth_headers(supervisor),
     )
     asset_id = create_asset.json()["id"]
 
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "in_progress", "comment": "start"},
         headers=_auth_headers(artist),
     )
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "review", "comment": "review"},
         headers=_auth_headers(artist),
     )
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "revision", "comment": "fixes"},
         headers=_auth_headers(supervisor),
     )
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "in_progress", "comment": "rework"},
         headers=_auth_headers(artist),
     )
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "review", "comment": "ready"},
         headers=_auth_headers(artist),
     )
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "revision", "comment": "minor fix"},
         headers=_auth_headers(supervisor),
     )
     await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "approved", "comment": "approved"},
         headers=_auth_headers(supervisor),
     )
 
     denied = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "delivered", "comment": "supervisor deliver"},
         headers=_auth_headers(supervisor),
     )
     assert denied.status_code == 403
 
     allowed = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "delivered", "comment": "admin deliver"},
         headers=_auth_headers(admin),
     )

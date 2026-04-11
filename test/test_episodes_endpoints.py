@@ -108,7 +108,7 @@ async def _create_episode_via_api(
     code: str | None = None,
 ) -> dict:
     resp = await client.post(
-        f"/projects/{project_id}/episodes",
+        f"/api/v1/projects/{project_id}/episodes",
         json={"name": name, "code": code or f"EP{uuid.uuid4().hex[:4].upper()}"},
         headers=headers,
     )
@@ -133,7 +133,7 @@ class TestCreateEpisode:
         await _assign_role(db_session, admin.id, RoleName.lead, project.id)
 
         resp = await client.post(
-            f"/projects/{project.id}/episodes",
+            f"/api/v1/projects/{project.id}/episodes",
             json={"name": "Pilot", "code": "EP01"},
             headers=_auth_headers(admin),
         )
@@ -159,7 +159,7 @@ class TestCreateEpisode:
         await _assign_role(db_session, admin.id, RoleName.lead, project.id)
 
         resp = await client.post(
-            f"/projects/{project.id}/episodes",
+            f"/api/v1/projects/{project.id}/episodes",
             json={
                 "name": "Full Episode",
                 "code": "FE01",
@@ -190,7 +190,7 @@ class TestCreateEpisode:
         await _create_episode_via_api(client, project.id, headers, name="E1", code="DUP1")
 
         resp = await client.post(
-            f"/projects/{project.id}/episodes",
+            f"/api/v1/projects/{project.id}/episodes",
             json={"name": "E2", "code": "DUP1"},
             headers=headers,
         )
@@ -207,7 +207,7 @@ class TestCreateEpisode:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/episodes",
+            f"/api/v1/projects/{project.id}/episodes",
             json={"name": "No Auth", "code": "NA01"},
         )
 
@@ -225,7 +225,7 @@ class TestCreateEpisode:
         await _assign_role(db_session, artist.id, RoleName.artist, project.id)
 
         resp = await client.post(
-            f"/projects/{project.id}/episodes",
+            f"/api/v1/projects/{project.id}/episodes",
             json={"name": "Artist Ep", "code": "AE01"},
             headers=_auth_headers(artist),
         )
@@ -253,7 +253,7 @@ class TestListEpisodes:
         await _create_episode_via_api(client, project.id, headers, name="E1", code="LE01")
         await _create_episode_via_api(client, project.id, headers, name="E2", code="LE02")
 
-        resp = await client.get(f"/projects/{project.id}/episodes", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/episodes", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -277,9 +277,9 @@ class TestListEpisodes:
         archived = await _create_episode_via_api(
             client, project.id, headers, name="Archived", code="ARC1"
         )
-        await client.post(f"/episodes/{archived['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/episodes/{archived['id']}/archive", headers=headers)
 
-        resp = await client.get(f"/projects/{project.id}/episodes", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/episodes", headers=headers)
 
         ids = [e["id"] for e in resp.json()["items"]]
         assert active["id"] in ids
@@ -302,7 +302,7 @@ class TestListEpisodes:
             )
 
         resp = await client.get(
-            f"/projects/{project.id}/episodes?offset=0&limit=3", headers=headers
+            f"/api/v1/projects/{project.id}/episodes?offset=0&limit=3", headers=headers
         )
 
         assert resp.status_code == 200
@@ -326,7 +326,9 @@ class TestListEpisodes:
             client, project.id, headers_admin, name="Visible", code="VIS1"
         )
 
-        resp = await client.get(f"/projects/{project.id}/episodes", headers=_auth_headers(artist))
+        resp = await client.get(
+            f"/api/v1/projects/{project.id}/episodes", headers=_auth_headers(artist)
+        )
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -340,7 +342,7 @@ class TestListEpisodes:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
         project = await _create_project(db_session, admin)
 
-        resp = await client.get(f"/projects/{project.id}/episodes")
+        resp = await client.get(f"/api/v1/projects/{project.id}/episodes")
 
         assert resp.status_code == 401
 
@@ -365,7 +367,7 @@ class TestGetEpisode:
             client, project.id, headers, name="Get Me", code="GM01"
         )
 
-        resp = await client.get(f"/episodes/{created['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/episodes/{created['id']}", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -381,7 +383,7 @@ class TestGetEpisode:
         admin = await _create_user(db_session, "admin-get404@ep.test")
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
-        resp = await client.get(f"/episodes/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(f"/api/v1/episodes/{uuid.uuid4()}", headers=_auth_headers(admin))
 
         assert resp.status_code == 404
 
@@ -399,7 +401,7 @@ class TestGetEpisode:
             client, project.id, headers, name="Secret", code="SC01"
         )
 
-        resp = await client.get(f"/episodes/{created['id']}")
+        resp = await client.get(f"/api/v1/episodes/{created['id']}")
 
         assert resp.status_code == 401
 
@@ -425,7 +427,7 @@ class TestUpdateEpisode:
         )
 
         resp = await client.patch(
-            f"/episodes/{created['id']}",
+            f"/api/v1/episodes/{created['id']}",
             json={"name": "After"},
             headers=headers,
         )
@@ -446,7 +448,7 @@ class TestUpdateEpisode:
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="ST01")
 
         resp = await client.patch(
-            f"/episodes/{created['id']}",
+            f"/api/v1/episodes/{created['id']}",
             json={"status": "in_progress"},
             headers=headers,
         )
@@ -468,7 +470,7 @@ class TestUpdateEpisode:
 
         # Code is not in the update schema — send it and confirm it's ignored
         resp = await client.patch(
-            f"/episodes/{created['id']}",
+            f"/api/v1/episodes/{created['id']}",
             json={"name": "Updated", "code": "CHANGED"},
             headers=headers,
         )
@@ -491,7 +493,7 @@ class TestUpdateEpisode:
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="AR01")
 
         resp = await client.patch(
-            f"/episodes/{created['id']}",
+            f"/api/v1/episodes/{created['id']}",
             json={"name": "Artist Edit"},
             headers=_auth_headers(artist),
         )
@@ -507,7 +509,7 @@ class TestUpdateEpisode:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.patch(
-            f"/episodes/{uuid.uuid4()}",
+            f"/api/v1/episodes/{uuid.uuid4()}",
             json={"name": "Ghost"},
             headers=_auth_headers(admin),
         )
@@ -533,7 +535,7 @@ class TestArchiveRestoreEpisode:
         headers = _auth_headers(admin)
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="AC01")
 
-        resp = await client.post(f"/episodes/{created['id']}/archive", headers=headers)
+        resp = await client.post(f"/api/v1/episodes/{created['id']}/archive", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["archived_at"] is not None
@@ -549,9 +551,9 @@ class TestArchiveRestoreEpisode:
         await _assign_role(db_session, admin.id, RoleName.lead, project.id)
         headers = _auth_headers(admin)
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="RE01")
-        await client.post(f"/episodes/{created['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/episodes/{created['id']}/archive", headers=headers)
 
-        resp = await client.post(f"/episodes/{created['id']}/restore", headers=headers)
+        resp = await client.post(f"/api/v1/episodes/{created['id']}/restore", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["archived_at"] is None
@@ -567,9 +569,9 @@ class TestArchiveRestoreEpisode:
         await _assign_role(db_session, admin.id, RoleName.lead, project.id)
         headers = _auth_headers(admin)
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="AL01")
-        await client.post(f"/episodes/{created['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/episodes/{created['id']}/archive", headers=headers)
 
-        resp = await client.get(f"/projects/{project.id}/episodes", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/episodes", headers=headers)
 
         assert resp.json()["total"] == 0
 
@@ -581,7 +583,9 @@ class TestArchiveRestoreEpisode:
         admin = await _create_user(db_session, "admin-arch404@ep.test")
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
-        resp = await client.post(f"/episodes/{uuid.uuid4()}/archive", headers=_auth_headers(admin))
+        resp = await client.post(
+            f"/api/v1/episodes/{uuid.uuid4()}/archive", headers=_auth_headers(admin)
+        )
 
         assert resp.status_code == 404
 
@@ -604,11 +608,11 @@ class TestDeleteEpisode:
         headers = _auth_headers(admin)
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="DL01")
 
-        resp = await client.delete(f"/episodes/{created['id']}?force=true", headers=headers)
+        resp = await client.delete(f"/api/v1/episodes/{created['id']}?force=true", headers=headers)
 
         assert resp.status_code == 204
 
-        get_resp = await client.get(f"/episodes/{created['id']}", headers=headers)
+        get_resp = await client.get(f"/api/v1/episodes/{created['id']}", headers=headers)
         assert get_resp.status_code == 404
 
     async def test_delete_without_force_returns_422(
@@ -623,7 +627,7 @@ class TestDeleteEpisode:
         headers = _auth_headers(admin)
         created = await _create_episode_via_api(client, project.id, headers, name="E", code="NF01")
 
-        resp = await client.delete(f"/episodes/{created['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/episodes/{created['id']}", headers=headers)
 
         assert resp.status_code == 422
 
@@ -644,7 +648,7 @@ class TestDeleteEpisode:
         )
 
         resp = await client.delete(
-            f"/episodes/{created['id']}?force=true", headers=_auth_headers(lead)
+            f"/api/v1/episodes/{created['id']}?force=true", headers=_auth_headers(lead)
         )
 
         assert resp.status_code == 403
@@ -658,7 +662,7 @@ class TestDeleteEpisode:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.delete(
-            f"/episodes/{uuid.uuid4()}?force=true", headers=_auth_headers(admin)
+            f"/api/v1/episodes/{uuid.uuid4()}?force=true", headers=_auth_headers(admin)
         )
 
         assert resp.status_code == 404

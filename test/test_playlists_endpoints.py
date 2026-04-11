@@ -117,7 +117,7 @@ async def _create_pipeline_task_via_api(
     headers: dict[str, str],
 ) -> dict:
     resp = await client.post(
-        f"/shots/{shot_id}/tasks",
+        f"/api/v1/shots/{shot_id}/tasks",
         json={"step_name": "Compositing", "step_type": "compositing", "order": 1},
         headers=headers,
     )
@@ -130,7 +130,7 @@ async def _create_version_via_api(
     task_id: uuid.UUID,
     headers: dict[str, str],
 ) -> dict:
-    resp = await client.post(f"/pipeline-tasks/{task_id}/versions", json={}, headers=headers)
+    resp = await client.post(f"/api/v1/pipeline-tasks/{task_id}/versions", json={}, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -143,7 +143,7 @@ async def _create_playlist_via_api(
     name: str = "Daily Review",
 ) -> dict:
     resp = await client.post(
-        "/playlists",
+        "/api/v1/playlists",
         json={"project_id": str(project_id), "name": name},
         headers=headers,
     )
@@ -167,7 +167,7 @@ class TestCreatePlaylist:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/playlists",
+            "/api/v1/playlists",
             json={"project_id": str(project.id), "name": "Monday Dailies"},
             headers=_auth_headers(admin),
         )
@@ -190,7 +190,7 @@ class TestCreatePlaylist:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/playlists",
+            "/api/v1/playlists",
             json={
                 "project_id": str(project.id),
                 "name": "Full Playlist",
@@ -214,7 +214,7 @@ class TestCreatePlaylist:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/playlists",
+            "/api/v1/playlists",
             json={"project_id": str(project.id), "name": "No Auth"},
         )
 
@@ -238,7 +238,7 @@ class TestGetUpdatePlaylist:
         headers = _auth_headers(admin)
         pl = await _create_playlist_via_api(client, project.id, headers)
 
-        resp = await client.get(f"/playlists/{pl['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/playlists/{pl['id']}", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -253,7 +253,7 @@ class TestGetUpdatePlaylist:
         admin = await _create_user(db_session, "admin-get404@pl.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/playlists/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(f"/api/v1/playlists/{uuid.uuid4()}", headers=_auth_headers(admin))
 
         assert resp.status_code == 404
 
@@ -269,7 +269,7 @@ class TestGetUpdatePlaylist:
         pl = await _create_playlist_via_api(client, project.id, headers)
 
         resp = await client.patch(
-            f"/playlists/{pl['id']}",
+            f"/api/v1/playlists/{pl['id']}",
             json={"name": "Updated Name", "status": "in_progress"},
             headers=headers,
         )
@@ -290,7 +290,7 @@ class TestGetUpdatePlaylist:
         headers = _auth_headers(admin)
         pl = await _create_playlist_via_api(client, project.id, headers)
 
-        resp = await client.delete(f"/playlists/{pl['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/playlists/{pl['id']}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["archived_at"] is not None
@@ -317,7 +317,7 @@ class TestPlaylistItems:
         pl = await _create_playlist_via_api(client, project.id, headers)
 
         resp = await client.post(
-            f"/playlists/{pl['id']}/items",
+            f"/api/v1/playlists/{pl['id']}/items",
             json={"version_id": version["id"]},
             headers=headers,
         )
@@ -342,13 +342,13 @@ class TestPlaylistItems:
         version = await _create_version_via_api(client, task["id"], headers)
         pl = await _create_playlist_via_api(client, project.id, headers)
         await client.post(
-            f"/playlists/{pl['id']}/items",
+            f"/api/v1/playlists/{pl['id']}/items",
             json={"version_id": version["id"]},
             headers=headers,
         )
 
         resp = await client.post(
-            f"/playlists/{pl['id']}/items",
+            f"/api/v1/playlists/{pl['id']}/items",
             json={"version_id": version["id"]},
             headers=headers,
         )
@@ -369,13 +369,13 @@ class TestPlaylistItems:
         version = await _create_version_via_api(client, task["id"], headers)
         pl = await _create_playlist_via_api(client, project.id, headers)
         add_resp = await client.post(
-            f"/playlists/{pl['id']}/items",
+            f"/api/v1/playlists/{pl['id']}/items",
             json={"version_id": version["id"]},
             headers=headers,
         )
         item_id = add_resp.json()["items"][0]["id"]
 
-        resp = await client.delete(f"/playlist-items/{item_id}", headers=headers)
+        resp = await client.delete(f"/api/v1/playlist-items/{item_id}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -393,14 +393,14 @@ class TestPlaylistItems:
         version = await _create_version_via_api(client, task["id"], headers)
         pl = await _create_playlist_via_api(client, project.id, headers)
         add_resp = await client.post(
-            f"/playlists/{pl['id']}/items",
+            f"/api/v1/playlists/{pl['id']}/items",
             json={"version_id": version["id"]},
             headers=headers,
         )
         item_id = add_resp.json()["items"][0]["id"]
 
         resp = await client.patch(
-            f"/playlist-items/{item_id}",
+            f"/api/v1/playlist-items/{item_id}",
             json={"review_status": "approved", "reviewer_notes": "Looks great"},
             headers=headers,
         )
@@ -426,16 +426,16 @@ class TestPlaylistItems:
         v2 = await _create_version_via_api(client, task["id"], headers)
         pl = await _create_playlist_via_api(client, project.id, headers)
         add1 = await client.post(
-            f"/playlists/{pl['id']}/items", json={"version_id": v1["id"]}, headers=headers
+            f"/api/v1/playlists/{pl['id']}/items", json={"version_id": v1["id"]}, headers=headers
         )
         add2 = await client.post(
-            f"/playlists/{pl['id']}/items", json={"version_id": v2["id"]}, headers=headers
+            f"/api/v1/playlists/{pl['id']}/items", json={"version_id": v2["id"]}, headers=headers
         )
         item1_id = add1.json()["items"][0]["id"]
         item2_id = add2.json()["items"][-1]["id"]
 
         resp = await client.patch(
-            f"/playlists/{pl['id']}/items/reorder",
+            f"/api/v1/playlists/{pl['id']}/items/reorder",
             json={"items": [{"item_id": item1_id, "order": 2}, {"item_id": item2_id, "order": 1}]},
             headers=headers,
         )
@@ -464,7 +464,7 @@ class TestListProjectPlaylists:
         await _create_playlist_via_api(client, project.id, headers, name="PL1")
         await _create_playlist_via_api(client, project.id, headers, name="PL2")
 
-        resp = await client.get(f"/projects/{project.id}/playlists", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/playlists", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -482,7 +482,7 @@ class TestListProjectPlaylists:
         for i in range(4):
             await _create_playlist_via_api(client, project.id, headers, name=f"P{i}")
 
-        resp = await client.get(f"/projects/{project.id}/playlists?limit=2", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/playlists?limit=2", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()

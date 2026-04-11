@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
-from app.services.storage import LocalStorage, get_storage_backend
+from app.services.storage import LocalStorage, S3Storage, get_storage_backend
 
 router = APIRouter()
 
@@ -42,7 +42,11 @@ async def _check_storage() -> tuple[bool, str]:
                 return True, "ok"
             return False, "Local storage root does not exist"
 
-        # S3 backend is stubbed in this project; this validates config/path generation.
+        if isinstance(backend, S3Storage):
+            await backend.exists("healthcheck")
+            # True or False both mean S3 is reachable.
+            return True, "ok"
+
         _ = await backend.get_url("healthcheck", expires=1)
         return True, "ok"
     except Exception as exc:

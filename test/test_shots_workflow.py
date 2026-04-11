@@ -117,7 +117,7 @@ async def test_patch_shot_status_requires_authentication(
     shot = await _create_shot(db_session, project.id, ShotStatus.pending, owner.id)
 
     response = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "in_progress", "comment": "start"},
     )
 
@@ -135,7 +135,7 @@ async def test_artist_owner_can_transition_to_in_progress_and_create_status_log(
     await _assign_role(db_session, artist.id, RoleName.artist, project.id)
 
     response = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "in_progress", "comment": "Ready to work"},
         headers=_auth_headers(artist),
     )
@@ -175,7 +175,7 @@ async def test_invalid_status_transition_returns_409(
     await _assign_role(db_session, lead.id, RoleName.lead, project.id)
 
     response = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "review", "comment": "skip steps"},
         headers=_auth_headers(lead),
     )
@@ -200,14 +200,14 @@ async def test_review_transition_allows_only_artist_owner_or_lead(
     await _assign_role(db_session, lead.id, RoleName.lead, project.id)
 
     denied = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "review", "comment": "try review"},
         headers=_auth_headers(other_artist),
     )
     assert denied.status_code == 403
 
     allowed = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "review", "comment": "lead review"},
         headers=_auth_headers(lead),
     )
@@ -229,14 +229,14 @@ async def test_approved_transition_allows_only_supervisor_or_admin(
     await _assign_role(db_session, supervisor.id, RoleName.supervisor, project.id)
 
     denied = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "approved", "comment": "lead approve"},
         headers=_auth_headers(lead),
     )
     assert denied.status_code == 403
 
     allowed = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "approved", "comment": "supervisor approve"},
         headers=_auth_headers(supervisor),
     )
@@ -258,14 +258,14 @@ async def test_delivered_transition_allows_only_admin(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     denied = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "delivered", "comment": "supervisor deliver"},
         headers=_auth_headers(supervisor),
     )
     assert denied.status_code == 403
 
     allowed = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "delivered", "comment": "admin deliver"},
         headers=_auth_headers(admin),
     )
@@ -288,7 +288,7 @@ async def test_revision_loop_approved_to_revision_and_revision_to_in_progress(
     await _assign_role(db_session, lead.id, RoleName.lead, project.id)
 
     to_revision = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "revision", "comment": "needs changes"},
         headers=_auth_headers(supervisor),
     )
@@ -296,7 +296,7 @@ async def test_revision_loop_approved_to_revision_and_revision_to_in_progress(
     assert to_revision.json()["new_status"] == "revision"
 
     to_in_progress = await client.patch(
-        f"/shots/{shot.id}/status",
+        f"/api/v1/shots/{shot.id}/status",
         json={"status": "in_progress", "comment": "back to work"},
         headers=_auth_headers(lead),
     )

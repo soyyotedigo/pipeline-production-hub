@@ -107,7 +107,7 @@ async def _create_webhook_via_api(
     events: list[str] | None = None,
 ) -> dict:
     resp = await client.post(
-        "/webhooks",
+        "/api/v1/webhooks",
         json={
             "project_id": str(project_id),
             "url": url,
@@ -135,7 +135,7 @@ class TestCreateWebhook:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/webhooks",
+            "/api/v1/webhooks",
             json={
                 "project_id": str(project.id),
                 "url": "https://example.com/hook",
@@ -162,7 +162,7 @@ class TestCreateWebhook:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/webhooks",
+            "/api/v1/webhooks",
             json={
                 "project_id": str(project.id),
                 "url": "https://example.com/h",
@@ -182,7 +182,7 @@ class TestCreateWebhook:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/webhooks",
+            f"/api/v1/projects/{project.id}/webhooks",
             json={"url": "https://example.com/proj-hook", "events": ["assignment.changed"]},
             headers=_auth_headers(admin),
         )
@@ -211,7 +211,7 @@ class TestListWebhooks:
         await _create_webhook_via_api(client, project.id, headers, url="https://example.com/h1")
         await _create_webhook_via_api(client, project.id, headers, url="https://example.com/h2")
 
-        resp = await client.get("/webhooks", headers=headers)
+        resp = await client.get("/api/v1/webhooks", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -230,7 +230,7 @@ class TestListWebhooks:
         await _create_webhook_via_api(client, project_a.id, headers, url="https://example.com/ha")
         await _create_webhook_via_api(client, project_b.id, headers, url="https://example.com/hb")
 
-        resp = await client.get(f"/webhooks?project_id={project_a.id}", headers=headers)
+        resp = await client.get(f"/api/v1/webhooks?project_id={project_a.id}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -246,7 +246,7 @@ class TestListWebhooks:
         headers = _auth_headers(admin)
         await _create_webhook_via_api(client, project.id, headers)
 
-        resp = await client.get(f"/projects/{project.id}/webhooks", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/webhooks", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -256,7 +256,7 @@ class TestListWebhooks:
         client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
-        resp = await client.get("/webhooks")
+        resp = await client.get("/api/v1/webhooks")
 
         assert resp.status_code == 401
 
@@ -279,7 +279,7 @@ class TestUpdateWebhook:
         created = await _create_webhook_via_api(client, project.id, headers)
 
         resp = await client.patch(
-            f"/webhooks/{created['id']}",
+            f"/api/v1/webhooks/{created['id']}",
             json={"url": "https://updated.com/hook", "events": ["file.uploaded"]},
             headers=headers,
         )
@@ -298,7 +298,7 @@ class TestUpdateWebhook:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.patch(
-            f"/webhooks/{uuid.uuid4()}",
+            f"/api/v1/webhooks/{uuid.uuid4()}",
             json={"url": "https://ghost.com/hook"},
             headers=_auth_headers(admin),
         )
@@ -323,7 +323,7 @@ class TestArchiveRestoreWebhook:
         headers = _auth_headers(admin)
         created = await _create_webhook_via_api(client, project.id, headers)
 
-        resp = await client.post(f"/webhooks/{created['id']}/archive", headers=headers)
+        resp = await client.post(f"/api/v1/webhooks/{created['id']}/archive", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["is_active"] is False
@@ -338,9 +338,9 @@ class TestArchiveRestoreWebhook:
         project = await _create_project(db_session, admin)
         headers = _auth_headers(admin)
         created = await _create_webhook_via_api(client, project.id, headers)
-        await client.post(f"/webhooks/{created['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/webhooks/{created['id']}/archive", headers=headers)
 
-        resp = await client.post(f"/webhooks/{created['id']}/restore", headers=headers)
+        resp = await client.post(f"/api/v1/webhooks/{created['id']}/restore", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["is_active"] is True
@@ -363,7 +363,7 @@ class TestDeleteWebhook:
         headers = _auth_headers(admin)
         created = await _create_webhook_via_api(client, project.id, headers)
 
-        resp = await client.delete(f"/webhooks/{created['id']}?force=true", headers=headers)
+        resp = await client.delete(f"/api/v1/webhooks/{created['id']}?force=true", headers=headers)
 
         assert resp.status_code == 204
 
@@ -378,7 +378,7 @@ class TestDeleteWebhook:
         headers = _auth_headers(admin)
         created = await _create_webhook_via_api(client, project.id, headers)
 
-        resp = await client.delete(f"/webhooks/{created['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/webhooks/{created['id']}", headers=headers)
 
         assert resp.status_code == 422
 
@@ -396,7 +396,7 @@ class TestDeleteWebhook:
         created = await _create_webhook_via_api(client, project.id, headers_admin)
 
         resp = await client.delete(
-            f"/webhooks/{created['id']}?force=true",
+            f"/api/v1/webhooks/{created['id']}?force=true",
             headers=_auth_headers(artist),
         )
 
@@ -411,7 +411,7 @@ class TestDeleteWebhook:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.delete(
-            f"/webhooks/{uuid.uuid4()}?force=true",
+            f"/api/v1/webhooks/{uuid.uuid4()}?force=true",
             headers=_auth_headers(admin),
         )
 

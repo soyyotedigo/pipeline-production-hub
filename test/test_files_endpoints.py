@@ -118,7 +118,7 @@ async def test_files_upload_metadata_download_and_versions(
     _, artist, project, shot, _ = await _seed_project_context(db_session)
 
     upload_v1 = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("plate.exr", b"plate-v1", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
@@ -131,7 +131,7 @@ async def test_files_upload_metadata_download_and_versions(
     )
 
     upload_v2 = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("plate.exr", b"plate-v2", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
@@ -140,22 +140,26 @@ async def test_files_upload_metadata_download_and_versions(
     file_v2 = upload_v2.json()
     assert file_v2["version"] == 2
 
-    get_metadata = await client.get(f"/files/{file_v2['id']}", headers=_auth_headers(artist))
+    get_metadata = await client.get(f"/api/v1/files/{file_v2['id']}", headers=_auth_headers(artist))
     assert get_metadata.status_code == 200
     assert get_metadata.json()["original_name"] == "plate.exr"
 
-    list_files = await client.get(f"/files?shot_id={shot.id}", headers=_auth_headers(artist))
+    list_files = await client.get(f"/api/v1/files?shot_id={shot.id}", headers=_auth_headers(artist))
     assert list_files.status_code == 200
     list_payload = list_files.json()
     assert list_payload["total"] == 1
     assert list_payload["items"][0]["version"] == 2
 
-    versions = await client.get(f"/files/{file_v2['id']}/versions", headers=_auth_headers(artist))
+    versions = await client.get(
+        f"/api/v1/files/{file_v2['id']}/versions", headers=_auth_headers(artist)
+    )
     assert versions.status_code == 200
     versions_payload = versions.json()
     assert [item["version"] for item in versions_payload["items"]] == [2, 1]
 
-    download = await client.get(f"/files/{file_v2['id']}/download", headers=_auth_headers(artist))
+    download = await client.get(
+        f"/api/v1/files/{file_v2['id']}/download", headers=_auth_headers(artist)
+    )
     assert download.status_code == 200
     assert download.content == b"plate-v2"
 
@@ -173,7 +177,7 @@ async def test_files_upload_requires_exactly_one_parent(
     _, artist, _, shot, asset = await _seed_project_context(db_session)
 
     response = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("asset.ma", b"maya", "application/octet-stream")},
         data={"shot_id": str(shot.id), "asset_id": str(asset.id)},
         headers=_auth_headers(artist),
@@ -195,17 +199,17 @@ async def test_files_soft_delete_hides_file(
     admin, artist, _, shot, _ = await _seed_project_context(db_session)
 
     upload_response = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("cache.bin", b"cache", "application/octet-stream")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
     )
     file_id = upload_response.json()["id"]
 
-    delete_response = await client.delete(f"/files/{file_id}", headers=_auth_headers(admin))
+    delete_response = await client.delete(f"/api/v1/files/{file_id}", headers=_auth_headers(admin))
     assert delete_response.status_code == 204
 
-    metadata_response = await client.get(f"/files/{file_id}", headers=_auth_headers(artist))
+    metadata_response = await client.get(f"/api/v1/files/{file_id}", headers=_auth_headers(artist))
     assert metadata_response.status_code == 404
 
     db_file = await db_session.get(File, uuid.UUID(file_id))
@@ -226,7 +230,7 @@ async def test_files_upload_dedup_reuses_storage_path(
     _, artist, _, shot, _ = await _seed_project_context(db_session)
 
     upload_v1 = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("plate.exr", b"same-binary-data", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
@@ -235,7 +239,7 @@ async def test_files_upload_dedup_reuses_storage_path(
     file_v1 = upload_v1.json()
 
     upload_v2 = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("plate.exr", b"same-binary-data", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
@@ -253,6 +257,160 @@ async def test_files_upload_dedup_reuses_storage_path(
 
 
 @pytest.mark.asyncio
+async def test_files_archive_restore_and_force_delete(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(settings, "storage_backend", "local")
+    monkeypatch.setattr(settings, "local_storage_root", str(tmp_path))
+
+    admin, artist, _, shot, _ = await _seed_project_context(db_session)
+
+    upload_response = await client.post(
+        "/api/v1/files/upload",
+        files={"upload": ("plate.exr", b"plate-bytes", "image/x-exr")},
+        data={"shot_id": str(shot.id)},
+        headers=_auth_headers(artist),
+    )
+    assert upload_response.status_code == 200
+    file_id = upload_response.json()["id"]
+
+    archive_response = await client.post(
+        f"/api/v1/files/{file_id}/archive", headers=_auth_headers(admin)
+    )
+    assert archive_response.status_code == 200
+
+    restore_response = await client.post(
+        f"/api/v1/files/{file_id}/restore", headers=_auth_headers(admin)
+    )
+    assert restore_response.status_code == 200
+
+    force_delete_response = await client.delete(
+        f"/api/v1/files/{file_id}?force=true", headers=_auth_headers(admin)
+    )
+    assert force_delete_response.status_code == 204
+
+    db_file = await db_session.get(File, uuid.UUID(file_id))
+    assert db_file is None
+
+
+@pytest.mark.asyncio
+async def test_files_update_metadata(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(settings, "storage_backend", "local")
+    monkeypatch.setattr(settings, "local_storage_root", str(tmp_path))
+
+    admin, artist, _, shot, _ = await _seed_project_context(db_session)
+
+    upload_response = await client.post(
+        "/api/v1/files/upload",
+        files={"upload": ("plate.exr", b"data", "image/x-exr")},
+        data={"shot_id": str(shot.id)},
+        headers=_auth_headers(artist),
+    )
+    file_id = upload_response.json()["id"]
+
+    patch_response = await client.patch(
+        f"/api/v1/files/{file_id}",
+        json={"comment": "approved by lead"},
+        headers=_auth_headers(admin),
+    )
+    assert patch_response.status_code == 200
+    assert patch_response.json()["comment"] == "approved by lead"
+
+
+@pytest.mark.asyncio
+async def test_files_list_for_project_and_asset(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(settings, "storage_backend", "local")
+    monkeypatch.setattr(settings, "local_storage_root", str(tmp_path))
+
+    _, artist, project, shot, asset = await _seed_project_context(db_session)
+
+    await client.post(
+        "/api/v1/files/upload",
+        files={"upload": ("plate.exr", b"shot-bytes", "image/x-exr")},
+        data={"shot_id": str(shot.id)},
+        headers=_auth_headers(artist),
+    )
+    await client.post(
+        "/api/v1/files/upload",
+        files={"upload": ("model.ma", b"asset-bytes", "application/octet-stream")},
+        data={"asset_id": str(asset.id)},
+        headers=_auth_headers(artist),
+    )
+
+    project_files = await client.get(
+        f"/api/v1/projects/{project.id}/files", headers=_auth_headers(artist)
+    )
+    assert project_files.status_code == 200
+    assert project_files.json()["total"] == 2
+
+    asset_files = await client.get(
+        f"/api/v1/assets/{asset.id}/files", headers=_auth_headers(artist)
+    )
+    assert asset_files.status_code == 200
+    assert asset_files.json()["total"] == 1
+
+    shot_files = await client.get(f"/api/v1/shots/{shot.id}/files", headers=_auth_headers(artist))
+    assert shot_files.status_code == 200
+    assert shot_files.json()["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_files_presigned_url_rejected_for_local_backend(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(settings, "storage_backend", "local")
+    monkeypatch.setattr(settings, "local_storage_root", str(tmp_path))
+
+    _, artist, _, shot, _ = await _seed_project_context(db_session)
+
+    upload_response = await client.post(
+        "/api/v1/files/upload",
+        files={"upload": ("plate.exr", b"x", "image/x-exr")},
+        data={"shot_id": str(shot.id)},
+        headers=_auth_headers(artist),
+    )
+    file_id = upload_response.json()["id"]
+
+    presigned_response = await client.get(
+        f"/api/v1/files/{file_id}/presigned-url", headers=_auth_headers(artist)
+    )
+    assert presigned_response.status_code == 422
+    assert presigned_response.json()["error"]["code"] == "UNPROCESSABLE"
+
+
+@pytest.mark.asyncio
+async def test_files_get_404_for_unknown_id(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(settings, "storage_backend", "local")
+    monkeypatch.setattr(settings, "local_storage_root", str(tmp_path))
+
+    _, artist, _, _, _ = await _seed_project_context(db_session)
+
+    response = await client.get(f"/api/v1/files/{uuid.uuid4()}", headers=_auth_headers(artist))
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_files_upload_rejects_payload_over_size_limit(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -266,7 +424,7 @@ async def test_files_upload_rejects_payload_over_size_limit(
     _, artist, _, shot, _ = await _seed_project_context(db_session)
 
     response = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("oversize.exr", b"12345", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),

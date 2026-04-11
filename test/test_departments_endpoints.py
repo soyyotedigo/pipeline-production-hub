@@ -99,7 +99,7 @@ async def _create_dept_via_api(
     if description is not None:
         payload["description"] = description
 
-    resp = await client.post("/departments", json=payload, headers=headers)
+    resp = await client.post("/api/v1/departments", json=payload, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -111,7 +111,7 @@ async def _add_member_via_api(
     headers: dict[str, str],
 ) -> dict:
     resp = await client.post(
-        f"/departments/{dept_id}/members",
+        f"/api/v1/departments/{dept_id}/members",
         json={"user_id": user_id},
         headers=headers,
     )
@@ -134,7 +134,7 @@ class TestCreateDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={"name": "Compositing", "code": "COMP"},
             headers=_auth_headers(admin),
         )
@@ -156,7 +156,7 @@ class TestCreateDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={"name": "Animation", "code": "anim"},
             headers=_auth_headers(admin),
         )
@@ -173,7 +173,7 @@ class TestCreateDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={
                 "name": "Lighting",
                 "code": "LGHT",
@@ -200,7 +200,7 @@ class TestCreateDepartment:
         await _create_dept_via_api(client, headers, name="FX", code="FX01")
 
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={"name": "FX", "code": "FX02"},
             headers=headers,
         )
@@ -219,7 +219,7 @@ class TestCreateDepartment:
         await _create_dept_via_api(client, headers, name="Rigging A", code="RIG")
 
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={"name": "Rigging B", "code": "rig"},
             headers=headers,
         )
@@ -232,7 +232,7 @@ class TestCreateDepartment:
         db_session: AsyncSession,
     ) -> None:
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={"name": "No Auth", "code": "NA"},
         )
 
@@ -247,7 +247,7 @@ class TestCreateDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.post(
-            "/departments",
+            "/api/v1/departments",
             json={"name": "Color Test", "code": "CLR", "color": "not-a-color"},
             headers=_auth_headers(admin),
         )
@@ -273,7 +273,7 @@ class TestListDepartments:
         await _create_dept_via_api(client, headers, name="Dept A", code="DA")
         await _create_dept_via_api(client, headers, name="Dept B", code="DB")
 
-        resp = await client.get("/departments", headers=headers)
+        resp = await client.get("/api/v1/departments", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -291,9 +291,9 @@ class TestListDepartments:
 
         active = await _create_dept_via_api(client, headers, name="Active Dept", code="ACT")
         archived = await _create_dept_via_api(client, headers, name="Archived Dept", code="ARC")
-        await client.post(f"/departments/{archived['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/departments/{archived['id']}/archive", headers=headers)
 
-        resp = await client.get("/departments", headers=headers)
+        resp = await client.get("/api/v1/departments", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -312,9 +312,9 @@ class TestListDepartments:
 
         active = await _create_dept_via_api(client, headers, name="Inc Active", code="IA")
         archived = await _create_dept_via_api(client, headers, name="Inc Archived", code="IR")
-        await client.post(f"/departments/{archived['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/departments/{archived['id']}/archive", headers=headers)
 
-        resp = await client.get("/departments?include_archived=true", headers=headers)
+        resp = await client.get("/api/v1/departments?include_archived=true", headers=headers)
 
         assert resp.status_code == 200
         ids = [d["id"] for d in resp.json()["items"]]
@@ -333,7 +333,7 @@ class TestListDepartments:
         for i in range(5):
             await _create_dept_via_api(client, headers, name=f"Paginated {i}", code=f"PG{i}")
 
-        resp = await client.get("/departments?offset=0&limit=3", headers=headers)
+        resp = await client.get("/api/v1/departments?offset=0&limit=3", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -347,7 +347,7 @@ class TestListDepartments:
         client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
-        resp = await client.get("/departments")
+        resp = await client.get("/api/v1/departments")
 
         assert resp.status_code == 401
 
@@ -371,7 +371,7 @@ class TestGetDepartment:
             client, headers, name="Get Me", code="GTM", description="A test department"
         )
 
-        resp = await client.get(f"/departments/{created['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/departments/{created['id']}", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -388,7 +388,7 @@ class TestGetDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.get(
-            f"/departments/{uuid.uuid4()}",
+            f"/api/v1/departments/{uuid.uuid4()}",
             headers=_auth_headers(admin),
         )
 
@@ -404,7 +404,7 @@ class TestGetDepartment:
         headers = _auth_headers(admin)
         created = await _create_dept_via_api(client, headers, name="Secret", code="SEC")
 
-        resp = await client.get(f"/departments/{created['id']}")
+        resp = await client.get(f"/api/v1/departments/{created['id']}")
 
         assert resp.status_code == 401
 
@@ -426,7 +426,7 @@ class TestUpdateDepartment:
         created = await _create_dept_via_api(client, headers, name="Old Name", code="OLD")
 
         resp = await client.patch(
-            f"/departments/{created['id']}",
+            f"/api/v1/departments/{created['id']}",
             json={"name": "New Name"},
             headers=headers,
         )
@@ -445,7 +445,7 @@ class TestUpdateDepartment:
         created = await _create_dept_via_api(client, headers, name="Code Dept", code="CDT")
 
         resp = await client.patch(
-            f"/departments/{created['id']}",
+            f"/api/v1/departments/{created['id']}",
             json={"code": "newcode"},
             headers=headers,
         )
@@ -462,10 +462,10 @@ class TestUpdateDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
         headers = _auth_headers(admin)
         created = await _create_dept_via_api(client, headers, name="Was Archived", code="WAR")
-        await client.post(f"/departments/{created['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/departments/{created['id']}/archive", headers=headers)
 
         resp = await client.patch(
-            f"/departments/{created['id']}",
+            f"/api/v1/departments/{created['id']}",
             json={"name": "Now Active"},
             headers=headers,
         )
@@ -486,7 +486,7 @@ class TestUpdateDepartment:
         other = await _create_dept_via_api(client, headers, name="Other Dept", code="OTH")
 
         resp = await client.patch(
-            f"/departments/{other['id']}",
+            f"/api/v1/departments/{other['id']}",
             json={"name": "Taken Name"},
             headers=headers,
         )
@@ -502,7 +502,7 @@ class TestUpdateDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.patch(
-            f"/departments/{uuid.uuid4()}",
+            f"/api/v1/departments/{uuid.uuid4()}",
             json={"name": "Ghost"},
             headers=_auth_headers(admin),
         )
@@ -526,7 +526,7 @@ class TestArchiveDepartment:
         headers = _auth_headers(admin)
         created = await _create_dept_via_api(client, headers, name="To Archive", code="TAR")
 
-        resp = await client.post(f"/departments/{created['id']}/archive", headers=headers)
+        resp = await client.post(f"/api/v1/departments/{created['id']}/archive", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["archived_at"] is not None
@@ -540,9 +540,9 @@ class TestArchiveDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
         headers = _auth_headers(admin)
         created = await _create_dept_via_api(client, headers, name="Hidden Dept", code="HID")
-        await client.post(f"/departments/{created['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/departments/{created['id']}/archive", headers=headers)
 
-        resp = await client.get("/departments", headers=headers)
+        resp = await client.get("/api/v1/departments", headers=headers)
 
         ids = [d["id"] for d in resp.json()["items"]]
         assert created["id"] not in ids
@@ -556,7 +556,7 @@ class TestArchiveDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.post(
-            f"/departments/{uuid.uuid4()}/archive",
+            f"/api/v1/departments/{uuid.uuid4()}/archive",
             headers=_auth_headers(admin),
         )
 
@@ -579,11 +579,11 @@ class TestDeleteDepartment:
         headers = _auth_headers(admin)
         created = await _create_dept_via_api(client, headers, name="Delete Me", code="DLT")
 
-        resp = await client.delete(f"/departments/{created['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/departments/{created['id']}", headers=headers)
 
         assert resp.status_code == 204
 
-        get_resp = await client.get(f"/departments/{created['id']}", headers=headers)
+        get_resp = await client.get(f"/api/v1/departments/{created['id']}", headers=headers)
         assert get_resp.status_code == 404
 
     async def test_delete_department_with_members_returns_422(
@@ -598,7 +598,7 @@ class TestDeleteDepartment:
         created = await _create_dept_via_api(client, headers, name="Has Members", code="HMB")
         await _add_member_via_api(client, created["id"], str(member.id), headers)
 
-        resp = await client.delete(f"/departments/{created['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/departments/{created['id']}", headers=headers)
 
         assert resp.status_code == 422
 
@@ -611,7 +611,7 @@ class TestDeleteDepartment:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.delete(
-            f"/departments/{uuid.uuid4()}",
+            f"/api/v1/departments/{uuid.uuid4()}",
             headers=_auth_headers(admin),
         )
 
@@ -636,7 +636,7 @@ class TestDepartmentMembers:
         dept = await _create_dept_via_api(client, headers, name="Add Member Dept", code="AMD")
 
         resp = await client.post(
-            f"/departments/{dept['id']}/members",
+            f"/api/v1/departments/{dept['id']}/members",
             json={"user_id": str(member.id)},
             headers=headers,
         )
@@ -661,7 +661,7 @@ class TestDepartmentMembers:
 
         await _add_member_via_api(client, dept["id"], str(member.id), headers)
         resp = await client.post(
-            f"/departments/{dept['id']}/members",
+            f"/api/v1/departments/{dept['id']}/members",
             json={"user_id": str(member.id)},
             headers=headers,
         )
@@ -679,7 +679,7 @@ class TestDepartmentMembers:
         dept = await _create_dept_via_api(client, headers, name="No User Dept", code="NUD")
 
         resp = await client.post(
-            f"/departments/{dept['id']}/members",
+            f"/api/v1/departments/{dept['id']}/members",
             json={"user_id": str(uuid.uuid4())},
             headers=headers,
         )
@@ -696,7 +696,7 @@ class TestDepartmentMembers:
         member = await _create_user(db_session, "member-nodept@dept.test")
 
         resp = await client.post(
-            f"/departments/{uuid.uuid4()}/members",
+            f"/api/v1/departments/{uuid.uuid4()}/members",
             json={"user_id": str(member.id)},
             headers=_auth_headers(admin),
         )
@@ -718,7 +718,7 @@ class TestDepartmentMembers:
         await _add_member_via_api(client, dept["id"], str(user_a.id), headers)
         await _add_member_via_api(client, dept["id"], str(user_b.id), headers)
 
-        resp = await client.get(f"/departments/{dept['id']}/members", headers=headers)
+        resp = await client.get(f"/api/v1/departments/{dept['id']}/members", headers=headers)
 
         assert resp.status_code == 200
         members = resp.json()
@@ -736,7 +736,7 @@ class TestDepartmentMembers:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.get(
-            f"/departments/{uuid.uuid4()}/members",
+            f"/api/v1/departments/{uuid.uuid4()}/members",
             headers=_auth_headers(admin),
         )
 
@@ -755,14 +755,16 @@ class TestDepartmentMembers:
         membership = await _add_member_via_api(client, dept["id"], str(member.id), headers)
 
         resp = await client.delete(
-            f"/department-members/{membership['id']}",
+            f"/api/v1/department-members/{membership['id']}",
             headers=headers,
         )
 
         assert resp.status_code == 204
 
         # Member no longer listed
-        members_resp = await client.get(f"/departments/{dept['id']}/members", headers=headers)
+        members_resp = await client.get(
+            f"/api/v1/departments/{dept['id']}/members", headers=headers
+        )
         assert members_resp.json() == []
 
     async def test_remove_nonexistent_member_returns_404(
@@ -774,7 +776,7 @@ class TestDepartmentMembers:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.delete(
-            f"/department-members/{uuid.uuid4()}",
+            f"/api/v1/department-members/{uuid.uuid4()}",
             headers=_auth_headers(admin),
         )
 
@@ -802,7 +804,7 @@ class TestUserDepartments:
         await _add_member_via_api(client, dept_a["id"], str(member.id), headers)
         await _add_member_via_api(client, dept_b["id"], str(member.id), headers)
 
-        resp = await client.get(f"/users/{member.id}/departments", headers=headers)
+        resp = await client.get(f"/api/v1/users/{member.id}/departments", headers=headers)
 
         assert resp.status_code == 200
         depts = resp.json()
@@ -821,7 +823,7 @@ class TestUserDepartments:
         user = await _create_user(db_session, "user-nomem@dept.test")
 
         resp = await client.get(
-            f"/users/{user.id}/departments",
+            f"/api/v1/users/{user.id}/departments",
             headers=_auth_headers(admin),
         )
 
@@ -837,7 +839,7 @@ class TestUserDepartments:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.get(
-            f"/users/{uuid.uuid4()}/departments",
+            f"/api/v1/users/{uuid.uuid4()}/departments",
             headers=_auth_headers(admin),
         )
 

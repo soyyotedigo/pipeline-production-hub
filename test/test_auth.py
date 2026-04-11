@@ -43,7 +43,7 @@ async def _create_user(
 
 async def _login(client: AsyncClient, email: str, password: str) -> dict:
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": email, "password": password},
     )
     assert response.status_code == 200
@@ -63,7 +63,7 @@ async def test_login_returns_access_and_refresh_tokens(
     await _create_user(db_session, "admin@vfxhub.dev", "admin123")
 
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "admin@vfxhub.dev", "password": "admin123"},
     )
 
@@ -102,7 +102,7 @@ async def test_login_invalid_credentials_returns_401(
     await _create_user(db_session, "admin@vfxhub.dev", "admin123")
 
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "admin@vfxhub.dev", "password": "wrongpass"},
     )
 
@@ -121,7 +121,7 @@ async def test_login_nonexistent_email_returns_401(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "ghost@vfxhub.dev", "password": "admin123"},
     )
 
@@ -143,7 +143,7 @@ async def test_login_inactive_user_returns_401(
     await _create_user(db_session, "inactive@vfxhub.dev", "admin123", is_active=False)
 
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "inactive@vfxhub.dev", "password": "admin123"},
     )
 
@@ -157,7 +157,7 @@ async def test_login_validation_missing_password_returns_422(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "admin@vfxhub.dev"},
     )
 
@@ -173,7 +173,7 @@ async def test_login_validation_missing_email_returns_422(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"password": "admin123"},
     )
 
@@ -189,7 +189,7 @@ async def test_login_validation_error_uses_consistent_error_format(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "ab"},
     )
 
@@ -220,7 +220,7 @@ async def test_refresh_returns_new_access_token(
     tokens = await _login(client, "admin@vfxhub.dev", "admin123")
 
     refresh_response = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": tokens["refresh_token"]},
     )
 
@@ -242,7 +242,7 @@ async def test_refresh_rejects_access_token(
     tokens = await _login(client, "admin@vfxhub.dev", "admin123")
 
     refresh_response = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": tokens["access_token"]},
     )
 
@@ -261,7 +261,7 @@ async def test_refresh_with_invalid_token_returns_401(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": "not.a.valid.jwt"},
     )
 
@@ -285,7 +285,7 @@ async def test_refresh_inactive_user_returns_401(
     await db_session.commit()
 
     response = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": tokens["refresh_token"]},
     )
 
@@ -308,7 +308,7 @@ async def test_refresh_deleted_user_returns_401(
     await db_session.commit()
 
     response = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": tokens["refresh_token"]},
     )
 
@@ -331,7 +331,7 @@ async def test_logout_blacklists_refresh_token(
     refresh_token = tokens["refresh_token"]
 
     logout_response = await client.post(
-        "/auth/logout",
+        "/api/v1/auth/logout",
         json={"refresh_token": refresh_token},
     )
 
@@ -347,7 +347,7 @@ async def test_logout_blacklists_refresh_token(
         await redis_client.aclose()
 
     refresh_response = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": refresh_token},
     )
     assert refresh_response.status_code == 401
@@ -369,7 +369,7 @@ async def test_logout_with_access_token_returns_401(
     tokens = await _login(client, "admin@vfxhub.dev", "admin123")
 
     response = await client.post(
-        "/auth/logout",
+        "/api/v1/auth/logout",
         json={"refresh_token": tokens["access_token"]},
     )
 
@@ -382,7 +382,7 @@ async def test_logout_with_invalid_token_returns_401(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        "/auth/logout",
+        "/api/v1/auth/logout",
         json={"refresh_token": "garbage.token.value"},
     )
 
@@ -399,7 +399,7 @@ async def test_logout_with_invalid_token_returns_401(
 async def test_me_requires_authentication(
     client: AsyncClient,
 ) -> None:
-    response = await client.get("/auth/me")
+    response = await client.get("/api/v1/auth/me")
 
     assert response.status_code == 401
     assert response.json() == {
@@ -416,7 +416,7 @@ async def test_me_with_invalid_bearer_token_returns_401(
     client: AsyncClient,
 ) -> None:
     response = await client.get(
-        "/auth/me",
+        "/api/v1/auth/me",
         headers={"Authorization": "Bearer not.a.real.token"},
     )
 
@@ -440,7 +440,7 @@ async def test_me_returns_user_info_and_roles(
     tokens = await _login(client, "admin@vfxhub.dev", "admin123")
 
     response = await client.get(
-        "/auth/me",
+        "/api/v1/auth/me",
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
 
@@ -461,7 +461,7 @@ async def test_me_returns_no_roles_for_new_user(
     tokens = await _login(client, "noroles@vfxhub.dev", "pass123")
 
     response = await client.get(
-        "/auth/me",
+        "/api/v1/auth/me",
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
 
@@ -498,7 +498,7 @@ async def test_me_returns_multiple_roles_including_project_scoped(
     tokens = await _login(client, "multi@vfxhub.dev", "pass123")
 
     response = await client.get(
-        "/auth/me",
+        "/api/v1/auth/me",
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
 
@@ -528,7 +528,7 @@ async def test_me_returns_user_profile_fields(
     tokens = await _login(client, "fullprofile@vfxhub.dev", "pass123")
 
     response = await client.get(
-        "/auth/me",
+        "/api/v1/auth/me",
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
 
@@ -549,13 +549,13 @@ async def test_login_rate_limit_returns_429_after_five_failed_attempts(
 ) -> None:
     for _ in range(5):
         response = await client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             json={"email": "nobody@vfxhub.dev", "password": "wrongpass"},
         )
         assert response.status_code == 401
 
     blocked_response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "nobody@vfxhub.dev", "password": "wrongpass"},
     )
     assert blocked_response.status_code == 429
@@ -578,7 +578,7 @@ async def test_login_success_clears_rate_limit(
     # 4 failed attempts — one short of the limit.
     for _ in range(4):
         response = await client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             json={"email": "admin@vfxhub.dev", "password": "wrongpass"},
         )
         assert response.status_code == 401
@@ -588,7 +588,7 @@ async def test_login_success_clears_rate_limit(
 
     # One more failure should be allowed (counter is back to 1, not 5).
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "admin@vfxhub.dev", "password": "wrongpass"},
     )
     assert response.status_code == 401

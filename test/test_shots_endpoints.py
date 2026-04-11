@@ -125,7 +125,7 @@ async def _create_shot_via_api(
         payload["assigned_to"] = str(assigned_to)
 
     resp = await client.post(
-        f"/projects/{project_id}/shots",
+        f"/api/v1/projects/{project_id}/shots",
         json=payload,
         headers=headers,
     )
@@ -180,7 +180,7 @@ class TestCreateShot:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/shots",
+            f"/api/v1/projects/{project.id}/shots",
             json={"name": "Shot X", "code": "SHX01"},
         )
 
@@ -195,7 +195,7 @@ class TestCreateShot:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.post(
-            f"/projects/{uuid.uuid4()}/shots",
+            f"/api/v1/projects/{uuid.uuid4()}/shots",
             json={"name": "Shot X", "code": "SHX01"},
             headers=_auth_headers(admin),
         )
@@ -213,7 +213,7 @@ class TestCreateShot:
         await _assign_role(db_session, admin.id, RoleName.lead, project.id)
 
         resp = await client.post(
-            f"/projects/{project.id}/shots",
+            f"/api/v1/projects/{project.id}/shots",
             json={"name": "", "code": "SHX01"},
             headers=_auth_headers(admin),
         )
@@ -231,7 +231,7 @@ class TestCreateShot:
         await _assign_role(db_session, admin.id, RoleName.lead, project.id)
 
         resp = await client.post(
-            f"/projects/{project.id}/shots",
+            f"/api/v1/projects/{project.id}/shots",
             json={"name": "Shot X", "code": "X"},
             headers=_auth_headers(admin),
         )
@@ -258,7 +258,7 @@ class TestCreateShot:
         )
 
         resp = await client.post(
-            f"/projects/{project.id}/shots",
+            f"/api/v1/projects/{project.id}/shots",
             json={"name": "Shot B", "code": "DUP01"},
             headers=headers,
         )
@@ -311,7 +311,7 @@ class TestGetShot:
             code="GET01",
         )
 
-        resp = await client.get(f"/shots/{shot['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot['id']}", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -336,7 +336,7 @@ class TestGetShot:
             _auth_headers(admin),
         )
 
-        resp = await client.get(f"/shots/{shot['id']}")
+        resp = await client.get(f"/api/v1/shots/{shot['id']}")
 
         assert resp.status_code == 401
 
@@ -349,7 +349,7 @@ class TestGetShot:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.get(
-            f"/shots/{uuid.uuid4()}",
+            f"/api/v1/shots/{uuid.uuid4()}",
             headers=_auth_headers(admin),
         )
 
@@ -376,7 +376,7 @@ class TestUpdateShot:
         shot = await _create_shot_via_api(client, project.id, headers)
 
         resp = await client.patch(
-            f"/shots/{shot['id']}",
+            f"/api/v1/shots/{shot['id']}",
             json={"name": "Updated Name"},
             headers=headers,
         )
@@ -398,7 +398,7 @@ class TestUpdateShot:
         shot = await _create_shot_via_api(client, project.id, headers)
 
         resp = await client.patch(
-            f"/shots/{shot['id']}",
+            f"/api/v1/shots/{shot['id']}",
             json={"frame_start": 1050, "frame_end": 1200},
             headers=headers,
         )
@@ -425,7 +425,7 @@ class TestUpdateShot:
         )
 
         resp = await client.patch(
-            f"/shots/{shot['id']}",
+            f"/api/v1/shots/{shot['id']}",
             json={"name": "Nope"},
         )
 
@@ -440,7 +440,7 @@ class TestUpdateShot:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.patch(
-            f"/shots/{uuid.uuid4()}",
+            f"/api/v1/shots/{uuid.uuid4()}",
             json={"name": "Ghost"},
             headers=_auth_headers(admin),
         )
@@ -475,7 +475,7 @@ class TestListShots:
             )
 
         resp = await client.get(
-            f"/projects/{project.id}/shots?offset=0&limit=10",
+            f"/api/v1/projects/{project.id}/shots?offset=0&limit=10",
             headers=headers,
         )
 
@@ -507,7 +507,7 @@ class TestListShots:
             )
 
         resp = await client.get(
-            f"/projects/{project.id}/shots?offset=0&limit=2",
+            f"/api/v1/projects/{project.id}/shots?offset=0&limit=2",
             headers=headers,
         )
 
@@ -537,7 +537,7 @@ class TestListShots:
             )
 
         resp = await client.get(
-            f"/projects/{project.id}/shots?offset=2&limit=10",
+            f"/api/v1/projects/{project.id}/shots?offset=2&limit=10",
             headers=headers,
         )
 
@@ -575,13 +575,13 @@ class TestListShots:
 
         # Transition first shot to in_progress
         await client.patch(
-            f"/shots/{shot['id']}/status",
+            f"/api/v1/shots/{shot['id']}/status",
             json={"status": "in_progress"},
             headers=_auth_headers(artist),
         )
 
         resp = await client.get(
-            f"/projects/{project.id}/shots?status=in_progress",
+            f"/api/v1/projects/{project.id}/shots?status=in_progress",
             headers=headers,
         )
 
@@ -619,7 +619,7 @@ class TestListShots:
         )
 
         resp = await client.get(
-            f"/projects/{project.id}/shots?assigned_to={artist.id}",
+            f"/api/v1/projects/{project.id}/shots?assigned_to={artist.id}",
             headers=headers,
         )
 
@@ -649,10 +649,10 @@ class TestListShots:
         )
 
         # Archive one shot
-        await client.post(f"/shots/{shot['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/shots/{shot['id']}/archive", headers=headers)
 
         resp = await client.get(
-            f"/projects/{project.id}/shots",
+            f"/api/v1/projects/{project.id}/shots",
             headers=headers,
         )
 
@@ -671,7 +671,7 @@ class TestListShots:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
         project = await _create_project(db_session, admin)
 
-        resp = await client.get(f"/projects/{project.id}/shots")
+        resp = await client.get(f"/api/v1/projects/{project.id}/shots")
 
         assert resp.status_code == 401
 
@@ -696,7 +696,7 @@ class TestArchiveRestoreShot:
         shot = await _create_shot_via_api(client, project.id, headers)
 
         resp = await client.post(
-            f"/shots/{shot['id']}/archive",
+            f"/api/v1/shots/{shot['id']}/archive",
             headers=headers,
         )
 
@@ -715,10 +715,10 @@ class TestArchiveRestoreShot:
         headers = _auth_headers(admin)
 
         shot = await _create_shot_via_api(client, project.id, headers)
-        await client.post(f"/shots/{shot['id']}/archive", headers=headers)
+        await client.post(f"/api/v1/shots/{shot['id']}/archive", headers=headers)
 
         resp = await client.post(
-            f"/shots/{shot['id']}/restore",
+            f"/api/v1/shots/{shot['id']}/restore",
             headers=headers,
         )
 
@@ -741,7 +741,7 @@ class TestArchiveRestoreShot:
             _auth_headers(admin),
         )
 
-        resp = await client.post(f"/shots/{shot['id']}/archive")
+        resp = await client.post(f"/api/v1/shots/{shot['id']}/archive")
 
         assert resp.status_code == 401
 
@@ -771,7 +771,7 @@ class TestDeleteShot:
         )
 
         resp = await client.delete(
-            f"/shots/{shot['id']}?force=true",
+            f"/api/v1/shots/{shot['id']}?force=true",
             headers=headers_lead,
         )
 
@@ -791,7 +791,7 @@ class TestDeleteShot:
         shot = await _create_shot_via_api(client, project.id, headers)
 
         resp = await client.delete(
-            f"/shots/{shot['id']}?force=true",
+            f"/api/v1/shots/{shot['id']}?force=true",
             headers=headers,
         )
 
@@ -799,7 +799,7 @@ class TestDeleteShot:
 
         # Verify shot is gone
         get_resp = await client.get(
-            f"/shots/{shot['id']}",
+            f"/api/v1/shots/{shot['id']}",
             headers=headers,
         )
         assert get_resp.status_code == 404
@@ -813,7 +813,7 @@ class TestDeleteShot:
         await _assign_role(db_session, admin.id, RoleName.admin, None)
 
         resp = await client.delete(
-            f"/shots/{uuid.uuid4()}?force=true",
+            f"/api/v1/shots/{uuid.uuid4()}?force=true",
             headers=_auth_headers(admin),
         )
 
@@ -835,7 +835,7 @@ class TestDeleteShot:
             _auth_headers(admin),
         )
 
-        resp = await client.delete(f"/shots/{shot['id']}?force=true")
+        resp = await client.delete(f"/api/v1/shots/{shot['id']}?force=true")
 
         assert resp.status_code == 401
 
@@ -868,19 +868,19 @@ class TestShotStatusHistory:
 
         # pending → in_progress
         await client.patch(
-            f"/shots/{shot['id']}/status",
+            f"/api/v1/shots/{shot['id']}/status",
             json={"status": "in_progress", "comment": "start"},
             headers=_auth_headers(artist),
         )
         # in_progress → review
         await client.patch(
-            f"/shots/{shot['id']}/status",
+            f"/api/v1/shots/{shot['id']}/status",
             json={"status": "review", "comment": "done"},
             headers=_auth_headers(artist),
         )
 
         resp = await client.get(
-            f"/shots/{shot['id']}/history?offset=0&limit=20",
+            f"/api/v1/shots/{shot['id']}/history?offset=0&limit=20",
             headers=headers,
         )
 
@@ -911,18 +911,18 @@ class TestShotStatusHistory:
         )
 
         await client.patch(
-            f"/shots/{shot['id']}/status",
+            f"/api/v1/shots/{shot['id']}/status",
             json={"status": "in_progress"},
             headers=_auth_headers(artist),
         )
         await client.patch(
-            f"/shots/{shot['id']}/status",
+            f"/api/v1/shots/{shot['id']}/status",
             json={"status": "review"},
             headers=_auth_headers(artist),
         )
 
         resp = await client.get(
-            f"/shots/{shot['id']}/history?offset=0&limit=1",
+            f"/api/v1/shots/{shot['id']}/history?offset=0&limit=1",
             headers=headers,
         )
 
@@ -947,7 +947,7 @@ class TestShotStatusHistory:
             _auth_headers(admin),
         )
 
-        resp = await client.get(f"/shots/{shot['id']}/history")
+        resp = await client.get(f"/api/v1/shots/{shot['id']}/history")
 
         assert resp.status_code == 401
 
@@ -977,7 +977,7 @@ class TestListShotFiles:
         shot = await _create_shot_via_api(client, project.id, headers)
 
         upload_resp = await client.post(
-            f"/projects/{project.id}/files/upload",
+            f"/api/v1/projects/{project.id}/files/upload",
             files={"upload": ("render.exr", b"fake exr data", "image/x-exr")},
             data={"shot_id": shot["id"]},
             headers=headers,
@@ -985,7 +985,7 @@ class TestListShotFiles:
         assert upload_resp.status_code == 200
 
         resp = await client.get(
-            f"/shots/{shot['id']}/files",
+            f"/api/v1/shots/{shot['id']}/files",
             headers=headers,
         )
 
@@ -1008,7 +1008,7 @@ class TestListShotFiles:
         shot = await _create_shot_via_api(client, project.id, headers)
 
         resp = await client.get(
-            f"/shots/{shot['id']}/files",
+            f"/api/v1/shots/{shot['id']}/files",
             headers=headers,
         )
 
@@ -1033,6 +1033,6 @@ class TestListShotFiles:
             _auth_headers(admin),
         )
 
-        resp = await client.get(f"/shots/{shot['id']}/files")
+        resp = await client.get(f"/api/v1/shots/{shot['id']}/files")
 
         assert resp.status_code == 401

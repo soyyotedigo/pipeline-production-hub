@@ -161,7 +161,7 @@ async def _create_tag_via_api(
         payload["project_id"] = str(project_id)
     if color is not None:
         payload["color"] = color
-    resp = await client.post("/tags", json=payload, headers=headers)
+    resp = await client.post("/api/v1/tags", json=payload, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -181,7 +181,7 @@ class TestCreateTag:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            "/tags",
+            "/api/v1/tags",
             json={"name": "hero"},
             headers=_auth_headers(admin),
         )
@@ -201,7 +201,7 @@ class TestCreateTag:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/tags",
+            "/api/v1/tags",
             json={"name": "wip", "project_id": str(project.id)},
             headers=_auth_headers(admin),
         )
@@ -218,7 +218,7 @@ class TestCreateTag:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            "/tags",
+            "/api/v1/tags",
             json={"name": "HERO_SHOT"},
             headers=_auth_headers(admin),
         )
@@ -238,7 +238,7 @@ class TestCreateTag:
 
         await _create_tag_via_api(client, headers, name="dupname", project_id=project.id)
         resp = await client.post(
-            "/tags",
+            "/api/v1/tags",
             json={"name": "dupname", "project_id": str(project.id)},
             headers=headers,
         )
@@ -250,7 +250,7 @@ class TestCreateTag:
         client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
-        resp = await client.post("/tags", json={"name": "noauth"})
+        resp = await client.post("/api/v1/tags", json={"name": "noauth"})
 
         assert resp.status_code == 401
 
@@ -264,7 +264,7 @@ class TestCreateTag:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/tags",
+            f"/api/v1/projects/{project.id}/tags",
             json={"name": "projep"},
             headers=_auth_headers(admin),
         )
@@ -290,7 +290,7 @@ class TestListAndGetTags:
         await _create_tag_via_api(client, headers, name="listtag1")
         await _create_tag_via_api(client, headers, name="listtag2")
 
-        resp = await client.get("/tags", headers=headers)
+        resp = await client.get("/api/v1/tags", headers=headers)
 
         assert resp.status_code == 200
         names = [t["name"] for t in resp.json()]
@@ -309,7 +309,7 @@ class TestListAndGetTags:
         await _create_tag_via_api(client, headers, name="scopedtag", project_id=project.id)
         await _create_tag_via_api(client, headers, name="globaltag")
 
-        resp = await client.get(f"/tags?project_id={project.id}", headers=headers)
+        resp = await client.get(f"/api/v1/tags?project_id={project.id}", headers=headers)
 
         assert resp.status_code == 200
         names = [t["name"] for t in resp.json()]
@@ -326,7 +326,7 @@ class TestListAndGetTags:
         await _create_tag_via_api(client, headers, name="searchable")
         await _create_tag_via_api(client, headers, name="other")
 
-        resp = await client.get("/tags/search?q=search", headers=headers)
+        resp = await client.get("/api/v1/tags/search?q=search", headers=headers)
 
         assert resp.status_code == 200
         names = [t["name"] for t in resp.json()]
@@ -343,7 +343,7 @@ class TestListAndGetTags:
         headers = _auth_headers(admin)
         created = await _create_tag_via_api(client, headers, name="gettag")
 
-        resp = await client.get(f"/tags/{created['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/tags/{created['id']}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["name"] == "gettag"
@@ -356,7 +356,7 @@ class TestListAndGetTags:
         admin = await _create_user(db_session, "admin-get404@tag.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/tags/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(f"/api/v1/tags/{uuid.uuid4()}", headers=_auth_headers(admin))
 
         assert resp.status_code == 404
 
@@ -378,7 +378,7 @@ class TestUpdateDeleteTag:
         created = await _create_tag_via_api(client, headers, name="oldname")
 
         resp = await client.patch(
-            f"/tags/{created['id']}",
+            f"/api/v1/tags/{created['id']}",
             json={"name": "newname", "color": "#FF0000"},
             headers=headers,
         )
@@ -398,7 +398,7 @@ class TestUpdateDeleteTag:
         headers = _auth_headers(admin)
         created = await _create_tag_via_api(client, headers, name="deltag")
 
-        resp = await client.delete(f"/tags/{created['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/tags/{created['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -422,7 +422,7 @@ class TestShotTags:
         tag = await _create_tag_via_api(client, headers, name="shotatag")
 
         resp = await client.post(
-            f"/shots/{shot.id}/tags",
+            f"/api/v1/shots/{shot.id}/tags",
             json={"tag_id": tag["id"]},
             headers=headers,
         )
@@ -440,9 +440,11 @@ class TestShotTags:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         tag = await _create_tag_via_api(client, headers, name="shotlistag")
-        await client.post(f"/shots/{shot.id}/tags", json={"tag_id": tag["id"]}, headers=headers)
+        await client.post(
+            f"/api/v1/shots/{shot.id}/tags", json={"tag_id": tag["id"]}, headers=headers
+        )
 
-        resp = await client.get(f"/shots/{shot.id}/tags", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/tags", headers=headers)
 
         assert resp.status_code == 200
         tag_ids = [t["id"] for t in resp.json()]
@@ -460,11 +462,11 @@ class TestShotTags:
         headers = _auth_headers(admin)
         tag = await _create_tag_via_api(client, headers, name="detachtag")
         attach_resp = await client.post(
-            f"/shots/{shot.id}/tags", json={"tag_id": tag["id"]}, headers=headers
+            f"/api/v1/shots/{shot.id}/tags", json={"tag_id": tag["id"]}, headers=headers
         )
         entity_tag_id = attach_resp.json()["id"]
 
-        resp = await client.delete(f"/entity-tags/{entity_tag_id}", headers=headers)
+        resp = await client.delete(f"/api/v1/entity-tags/{entity_tag_id}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -479,10 +481,12 @@ class TestShotTags:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         tag = await _create_tag_via_api(client, headers, name="duptag")
-        await client.post(f"/shots/{shot.id}/tags", json={"tag_id": tag["id"]}, headers=headers)
+        await client.post(
+            f"/api/v1/shots/{shot.id}/tags", json={"tag_id": tag["id"]}, headers=headers
+        )
 
         resp = await client.post(
-            f"/shots/{shot.id}/tags",
+            f"/api/v1/shots/{shot.id}/tags",
             json={"tag_id": tag["id"]},
             headers=headers,
         )
@@ -509,7 +513,7 @@ class TestAssetTags:
         tag = await _create_tag_via_api(client, headers, name="assettag")
 
         resp = await client.post(
-            f"/assets/{asset.id}/tags",
+            f"/api/v1/assets/{asset.id}/tags",
             json={"tag_id": tag["id"]},
             headers=headers,
         )
@@ -527,9 +531,11 @@ class TestAssetTags:
         asset = await _create_asset(db_session, project)
         headers = _auth_headers(admin)
         tag = await _create_tag_via_api(client, headers, name="assetlisttag")
-        await client.post(f"/assets/{asset.id}/tags", json={"tag_id": tag["id"]}, headers=headers)
+        await client.post(
+            f"/api/v1/assets/{asset.id}/tags", json={"tag_id": tag["id"]}, headers=headers
+        )
 
-        resp = await client.get(f"/assets/{asset.id}/tags", headers=headers)
+        resp = await client.get(f"/api/v1/assets/{asset.id}/tags", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
@@ -554,7 +560,7 @@ class TestSequenceTags:
         tag = await _create_tag_via_api(client, headers, name="seqtag")
 
         resp = await client.post(
-            f"/sequences/{seq.id}/tags",
+            f"/api/v1/sequences/{seq.id}/tags",
             json={"tag_id": tag["id"]},
             headers=headers,
         )
@@ -572,9 +578,11 @@ class TestSequenceTags:
         seq = await _create_sequence(db_session, project)
         headers = _auth_headers(admin)
         tag = await _create_tag_via_api(client, headers, name="seqlisttag")
-        await client.post(f"/sequences/{seq.id}/tags", json={"tag_id": tag["id"]}, headers=headers)
+        await client.post(
+            f"/api/v1/sequences/{seq.id}/tags", json={"tag_id": tag["id"]}, headers=headers
+        )
 
-        resp = await client.get(f"/sequences/{seq.id}/tags", headers=headers)
+        resp = await client.get(f"/api/v1/sequences/{seq.id}/tags", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
@@ -597,7 +605,7 @@ class TestProjectTagsEndpoint:
         headers = _auth_headers(admin)
         await _create_tag_via_api(client, headers, name="prjrouttag", project_id=project.id)
 
-        resp = await client.get(f"/projects/{project.id}/tags", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/tags", headers=headers)
 
         assert resp.status_code == 200
         names = [t["name"] for t in resp.json()]

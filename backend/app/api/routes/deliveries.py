@@ -27,7 +27,13 @@ DbDep = Annotated[AsyncSession, Depends(get_db)]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
-@projects_router.post("/{id}/deliveries", response_model=DeliveryResponse, status_code=201)
+@projects_router.post(
+    "/{id}/deliveries",
+    response_model=DeliveryResponse,
+    status_code=201,
+    summary="Create Delivery",
+    description="Create a new delivery package under the given project.",
+)
 async def create_delivery(
     id: uuid.UUID, data: DeliveryCreate, current_user: CurrentUserDep, db: DbDep
 ) -> DeliveryResponse:
@@ -36,7 +42,12 @@ async def create_delivery(
     return DeliveryResponse.model_validate(delivery)
 
 
-@projects_router.get("/{id}/deliveries", response_model=list[DeliveryResponse])
+@projects_router.get(
+    "/{id}/deliveries",
+    response_model=list[DeliveryResponse],
+    summary="List Deliveries",
+    description="List deliveries of a project with optional status, date range and recipient filters.",
+)
 async def list_deliveries(
     id: uuid.UUID,
     current_user: CurrentUserDep,
@@ -61,14 +72,24 @@ async def list_deliveries(
     return [DeliveryResponse.model_validate(d) for d in deliveries]
 
 
-@router.get("/{id}", response_model=DeliveryResponse)
+@router.get(
+    "/{id}",
+    response_model=DeliveryResponse,
+    summary="Get Delivery",
+    description="Retrieve a single delivery by its identifier.",
+)
 async def get_delivery(id: uuid.UUID, current_user: CurrentUserDep, db: DbDep) -> DeliveryResponse:
     service = DeliveryService(db)
     delivery = await service.get(id)
     return DeliveryResponse.model_validate(delivery)
 
 
-@router.patch("/{id}", response_model=DeliveryResponse)
+@router.patch(
+    "/{id}",
+    response_model=DeliveryResponse,
+    summary="Update Delivery",
+    description="Update mutable fields of a delivery such as recipient, notes or scheduled date.",
+)
 async def update_delivery(
     id: uuid.UUID, data: DeliveryUpdate, current_user: CurrentUserDep, db: DbDep
 ) -> DeliveryResponse:
@@ -77,7 +98,12 @@ async def update_delivery(
     return DeliveryResponse.model_validate(delivery)
 
 
-@router.patch("/{id}/status", response_model=DeliveryResponse)
+@router.patch(
+    "/{id}/status",
+    response_model=DeliveryResponse,
+    summary="Update Delivery Status",
+    description="Transition a delivery to a new status following the delivery workflow rules.",
+)
 async def update_delivery_status(
     id: uuid.UUID, data: DeliveryStatusUpdate, current_user: CurrentUserDep, db: DbDep
 ) -> DeliveryResponse:
@@ -86,14 +112,25 @@ async def update_delivery_status(
     return DeliveryResponse.model_validate(delivery)
 
 
-@router.delete("/{id}", status_code=204)
+@router.delete(
+    "/{id}",
+    status_code=204,
+    summary="Delete Delivery",
+    description="Delete a delivery and all of its items.",
+)
 async def delete_delivery(id: uuid.UUID, current_user: CurrentUserDep, db: DbDep) -> Response:
     service = DeliveryService(db)
     await service.delete(id)
     return Response(status_code=204)
 
 
-@router.post("/{id}/items", response_model=DeliveryItemResponse, status_code=201)
+@router.post(
+    "/{id}/items",
+    response_model=DeliveryItemResponse,
+    status_code=201,
+    summary="Add Delivery Item",
+    description="Attach a version (or other deliverable entity) as an item of the delivery.",
+)
 async def add_delivery_item(
     id: uuid.UUID, data: DeliveryItemCreate, current_user: CurrentUserDep, db: DbDep
 ) -> DeliveryItemResponse:
@@ -102,7 +139,12 @@ async def add_delivery_item(
     return DeliveryItemResponse.model_validate(item)
 
 
-@router.get("/{id}/items", response_model=list[DeliveryItemResponse])
+@router.get(
+    "/{id}/items",
+    response_model=list[DeliveryItemResponse],
+    summary="List Delivery Items",
+    description="List all items currently included in the delivery.",
+)
 async def list_delivery_items(
     id: uuid.UUID, current_user: CurrentUserDep, db: DbDep
 ) -> list[DeliveryItemResponse]:
@@ -111,7 +153,12 @@ async def list_delivery_items(
     return [DeliveryItemResponse.model_validate(i) for i in items]
 
 
-@delivery_items_router.delete("/{item_id}", status_code=204)
+@delivery_items_router.delete(
+    "/{item_id}",
+    status_code=204,
+    summary="Remove Delivery Item",
+    description="Detach an item from its delivery without deleting the underlying entity.",
+)
 async def remove_delivery_item(
     item_id: uuid.UUID, current_user: CurrentUserDep, db: DbDep
 ) -> Response:

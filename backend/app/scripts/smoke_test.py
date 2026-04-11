@@ -119,6 +119,8 @@ def run_smoke_test(config: SmokeConfig) -> None:
     project_name = f"Smoke Test {unique_suffix}"
     shot_name = f"Smoke Shot {unique_suffix}"
 
+    api = f"{config.base_url}/api/v1"
+
     print(f"[1/6] GET {config.base_url}/health")
     status, payload = _request(
         method="GET",
@@ -132,10 +134,10 @@ def run_smoke_test(config: SmokeConfig) -> None:
         response_body=payload,
     )
 
-    print(f"[2/6] POST {config.base_url}/auth/login")
+    print(f"[2/6] POST {api}/auth/login")
     status, payload = _request(
         method="POST",
-        url=f"{config.base_url}/auth/login",
+        url=f"{api}/auth/login",
         timeout=config.timeout,
         payload={"email": config.email, "password": config.password},
     )
@@ -147,10 +149,10 @@ def run_smoke_test(config: SmokeConfig) -> None:
     )
     access_token = _require_key("Login", payload, "access_token")
 
-    print(f"[3/6] GET {config.base_url}/auth/me")
+    print(f"[3/6] GET {api}/auth/me")
     status, payload = _request(
         method="GET",
-        url=f"{config.base_url}/auth/me",
+        url=f"{api}/auth/me",
         timeout=config.timeout,
         token=access_token,
     )
@@ -162,10 +164,10 @@ def run_smoke_test(config: SmokeConfig) -> None:
     )
     user_email = _require_key("Get current user", payload, "email")
 
-    print(f"[4/6] POST {config.base_url}/projects")
+    print(f"[4/6] POST {api}/projects")
     status, payload = _request(
         method="POST",
-        url=f"{config.base_url}/projects",
+        url=f"{api}/projects",
         timeout=config.timeout,
         token=access_token,
         payload={
@@ -184,14 +186,15 @@ def run_smoke_test(config: SmokeConfig) -> None:
     )
     project_id = _require_key("Create project", payload, "id")
 
-    print(f"[5/6] POST {config.base_url}/projects/{project_id}/shots")
+    print(f"[5/6] POST {api}/projects/{project_id}/shots")
     status, payload = _request(
         method="POST",
-        url=f"{config.base_url}/projects/{project_id}/shots",
+        url=f"{api}/projects/{project_id}/shots",
         timeout=config.timeout,
         token=access_token,
         payload={
             "name": shot_name,
+            "code": f"SH{unique_suffix[-4:]}",
             "frame_start": 1001,
             "frame_end": 1040,
             "priority": "normal",
@@ -205,10 +208,10 @@ def run_smoke_test(config: SmokeConfig) -> None:
     )
     shot_id = _require_key("Create shot", payload, "id")
 
-    print(f"[6/6] PATCH {config.base_url}/shots/{shot_id}/status")
+    print(f"[6/6] PATCH {api}/shots/{shot_id}/status")
     status, payload = _request(
         method="PATCH",
-        url=f"{config.base_url}/shots/{shot_id}/status",
+        url=f"{api}/shots/{shot_id}/status",
         timeout=config.timeout,
         token=access_token,
         payload={"status": "in_progress", "comment": "Smoke test transition"},

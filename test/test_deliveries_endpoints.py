@@ -156,7 +156,9 @@ async def _create_delivery_via_api(
         payload["recipient"] = recipient
     if notes:
         payload["notes"] = notes
-    resp = await client.post(f"/projects/{project_id}/deliveries", json=payload, headers=headers)
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/deliveries", json=payload, headers=headers
+    )
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -168,7 +170,7 @@ async def _add_item_via_api(
     headers: dict[str, str],
 ) -> dict:
     resp = await client.post(
-        f"/deliveries/{delivery_id}/items",
+        f"/api/v1/deliveries/{delivery_id}/items",
         json={"version_id": str(version_id)},
         headers=headers,
     )
@@ -192,7 +194,7 @@ class TestCreateDelivery:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/deliveries",
+            f"/api/v1/projects/{project.id}/deliveries",
             json={"name": "Monday Delivery"},
             headers=_auth_headers(admin),
         )
@@ -215,7 +217,7 @@ class TestCreateDelivery:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/deliveries",
+            f"/api/v1/projects/{project.id}/deliveries",
             json={
                 "name": "Full Delivery",
                 "delivery_date": "2026-04-01",
@@ -240,7 +242,7 @@ class TestCreateDelivery:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            f"/projects/{project.id}/deliveries",
+            f"/api/v1/projects/{project.id}/deliveries",
             json={"name": "No Auth"},
         )
 
@@ -265,7 +267,7 @@ class TestListDeliveries:
         await _create_delivery_via_api(client, project.id, headers, name="D1")
         await _create_delivery_via_api(client, project.id, headers, name="D2")
 
-        resp = await client.get(f"/projects/{project.id}/deliveries", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/deliveries", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) >= 2
@@ -281,13 +283,15 @@ class TestListDeliveries:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers, name="ToSend")
         await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "sent"},
             headers=headers,
         )
         await _create_delivery_via_api(client, project.id, headers, name="StillPreparing")
 
-        resp = await client.get(f"/projects/{project.id}/deliveries?status=sent", headers=headers)
+        resp = await client.get(
+            f"/api/v1/projects/{project.id}/deliveries?status=sent", headers=headers
+        )
 
         assert resp.status_code == 200
         assert all(d["status"] == "sent" for d in resp.json())
@@ -305,7 +309,7 @@ class TestListDeliveries:
         await _create_delivery_via_api(client, project.id, headers, name="R2", recipient="studio-b")
 
         resp = await client.get(
-            f"/projects/{project.id}/deliveries?recipient=studio-a", headers=headers
+            f"/api/v1/projects/{project.id}/deliveries?recipient=studio-a", headers=headers
         )
 
         assert resp.status_code == 200
@@ -321,7 +325,7 @@ class TestListDeliveries:
         admin = await _create_user(db_session, "admin-listnoauth@del.test")
         project = await _create_project(db_session, admin)
 
-        resp = await client.get(f"/projects/{project.id}/deliveries")
+        resp = await client.get(f"/api/v1/projects/{project.id}/deliveries")
 
         assert resp.status_code == 401
 
@@ -343,7 +347,7 @@ class TestGetDelivery:
         headers = _auth_headers(admin)
         created = await _create_delivery_via_api(client, project.id, headers, name="GetMe")
 
-        resp = await client.get(f"/deliveries/{created['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/deliveries/{created['id']}", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -358,7 +362,7 @@ class TestGetDelivery:
         admin = await _create_user(db_session, "admin-get404@del.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/deliveries/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(f"/api/v1/deliveries/{uuid.uuid4()}", headers=_auth_headers(admin))
 
         assert resp.status_code == 404
 
@@ -374,7 +378,7 @@ class TestGetDelivery:
             client, project.id, _auth_headers(admin), name="AuthGet"
         )
 
-        resp = await client.get(f"/deliveries/{created['id']}")
+        resp = await client.get(f"/api/v1/deliveries/{created['id']}")
 
         assert resp.status_code == 401
 
@@ -397,7 +401,7 @@ class TestUpdateDelivery:
         created = await _create_delivery_via_api(client, project.id, headers, name="OldName")
 
         resp = await client.patch(
-            f"/deliveries/{created['id']}",
+            f"/api/v1/deliveries/{created['id']}",
             json={"name": "NewName"},
             headers=headers,
         )
@@ -417,7 +421,7 @@ class TestUpdateDelivery:
         created = await _create_delivery_via_api(client, project.id, headers, name="Before")
 
         resp = await client.patch(
-            f"/deliveries/{created['id']}",
+            f"/api/v1/deliveries/{created['id']}",
             json={
                 "name": "After",
                 "delivery_date": "2026-05-01",
@@ -443,7 +447,7 @@ class TestUpdateDelivery:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.patch(
-            f"/deliveries/{uuid.uuid4()}",
+            f"/api/v1/deliveries/{uuid.uuid4()}",
             json={"name": "Ghost"},
             headers=_auth_headers(admin),
         )
@@ -469,7 +473,7 @@ class TestUpdateDeliveryStatus:
         d = await _create_delivery_via_api(client, project.id, headers)
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "sent"},
             headers=headers,
         )
@@ -488,11 +492,11 @@ class TestUpdateDeliveryStatus:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "acknowledged"},
             headers=headers,
         )
@@ -511,14 +515,14 @@ class TestUpdateDeliveryStatus:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
         )
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "accepted"},
             headers=headers,
         )
@@ -537,14 +541,14 @@ class TestUpdateDeliveryStatus:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
         )
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "rejected"},
             headers=headers,
         )
@@ -563,17 +567,17 @@ class TestUpdateDeliveryStatus:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
         )
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "rejected"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "rejected"}, headers=headers
         )
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "preparing"},
             headers=headers,
         )
@@ -593,7 +597,7 @@ class TestUpdateDeliveryStatus:
         d = await _create_delivery_via_api(client, project.id, headers)
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "acknowledged"},
             headers=headers,
         )
@@ -611,17 +615,17 @@ class TestUpdateDeliveryStatus:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "acknowledged"}, headers=headers
         )
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "accepted"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "accepted"}, headers=headers
         )
 
         resp = await client.patch(
-            f"/deliveries/{d['id']}/status",
+            f"/api/v1/deliveries/{d['id']}/status",
             json={"status": "rejected"},
             headers=headers,
         )
@@ -637,7 +641,7 @@ class TestUpdateDeliveryStatus:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.patch(
-            f"/deliveries/{uuid.uuid4()}/status",
+            f"/api/v1/deliveries/{uuid.uuid4()}/status",
             json={"status": "sent"},
             headers=_auth_headers(admin),
         )
@@ -662,7 +666,7 @@ class TestDeleteDelivery:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers, name="DeleteMe")
 
-        resp = await client.delete(f"/deliveries/{d['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/deliveries/{d['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -677,10 +681,10 @@ class TestDeleteDelivery:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers, name="SentDelete")
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
 
-        resp = await client.delete(f"/deliveries/{d['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/deliveries/{d['id']}", headers=headers)
 
         assert resp.status_code == 403
 
@@ -692,7 +696,9 @@ class TestDeleteDelivery:
         admin = await _create_user(db_session, "admin-del404@del.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.delete(f"/deliveries/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.delete(
+            f"/api/v1/deliveries/{uuid.uuid4()}", headers=_auth_headers(admin)
+        )
 
         assert resp.status_code == 404
 
@@ -717,7 +723,7 @@ class TestDeliveryItems:
         d = await _create_delivery_via_api(client, project.id, headers)
 
         resp = await client.post(
-            f"/deliveries/{d['id']}/items",
+            f"/api/v1/deliveries/{d['id']}/items",
             json={"version_id": str(version.id)},
             headers=headers,
         )
@@ -743,7 +749,7 @@ class TestDeliveryItems:
         await _add_item_via_api(client, d["id"], version.id, headers)
 
         resp = await client.post(
-            f"/deliveries/{d['id']}/items",
+            f"/api/v1/deliveries/{d['id']}/items",
             json={"version_id": str(version.id)},
             headers=headers,
         )
@@ -763,11 +769,11 @@ class TestDeliveryItems:
         headers = _auth_headers(admin)
         d = await _create_delivery_via_api(client, project.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
 
         resp = await client.post(
-            f"/deliveries/{d['id']}/items",
+            f"/api/v1/deliveries/{d['id']}/items",
             json={"version_id": str(version.id)},
             headers=headers,
         )
@@ -789,7 +795,7 @@ class TestDeliveryItems:
         d = await _create_delivery_via_api(client, project_a.id, headers)
 
         resp = await client.post(
-            f"/deliveries/{d['id']}/items",
+            f"/api/v1/deliveries/{d['id']}/items",
             json={"version_id": str(version_b.id)},
             headers=headers,
         )
@@ -808,7 +814,7 @@ class TestDeliveryItems:
         d = await _create_delivery_via_api(client, project.id, headers)
 
         resp = await client.post(
-            f"/deliveries/{d['id']}/items",
+            f"/api/v1/deliveries/{d['id']}/items",
             json={"version_id": str(uuid.uuid4())},
             headers=headers,
         )
@@ -827,7 +833,7 @@ class TestDeliveryItems:
         version = await _create_version(db_session, project, shot, admin)
 
         resp = await client.post(
-            f"/deliveries/{uuid.uuid4()}/items",
+            f"/api/v1/deliveries/{uuid.uuid4()}/items",
             json={"version_id": str(version.id)},
             headers=_auth_headers(admin),
         )
@@ -848,7 +854,7 @@ class TestDeliveryItems:
         d = await _create_delivery_via_api(client, project.id, headers)
         await _add_item_via_api(client, d["id"], version.id, headers)
 
-        resp = await client.get(f"/deliveries/{d['id']}/items", headers=headers)
+        resp = await client.get(f"/api/v1/deliveries/{d['id']}/items", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) == 1
@@ -867,7 +873,7 @@ class TestDeliveryItems:
         d = await _create_delivery_via_api(client, project.id, headers)
         item = await _add_item_via_api(client, d["id"], version.id, headers)
 
-        resp = await client.delete(f"/delivery-items/{item['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/delivery-items/{item['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -885,10 +891,10 @@ class TestDeliveryItems:
         d = await _create_delivery_via_api(client, project.id, headers)
         item = await _add_item_via_api(client, d["id"], version.id, headers)
         await client.patch(
-            f"/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
+            f"/api/v1/deliveries/{d['id']}/status", json={"status": "sent"}, headers=headers
         )
 
-        resp = await client.delete(f"/delivery-items/{item['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/delivery-items/{item['id']}", headers=headers)
 
         assert resp.status_code == 403
 
@@ -900,6 +906,8 @@ class TestDeliveryItems:
         admin = await _create_user(db_session, "admin-rmitem404@del.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.delete(f"/delivery-items/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.delete(
+            f"/api/v1/delivery-items/{uuid.uuid4()}", headers=_auth_headers(admin)
+        )
 
         assert resp.status_code == 404

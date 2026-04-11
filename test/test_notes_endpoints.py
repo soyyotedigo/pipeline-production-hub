@@ -148,7 +148,7 @@ async def _create_note_via_api(
     }
     if subject is not None:
         payload["subject"] = subject
-    resp = await client.post("/notes", json=payload, headers=headers)
+    resp = await client.post("/api/v1/notes", json=payload, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -170,7 +170,7 @@ class TestCreateNote:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            "/notes",
+            "/api/v1/notes",
             json={
                 "project_id": str(project.id),
                 "entity_type": "project",
@@ -201,7 +201,7 @@ class TestCreateNote:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/shots/{shot.id}/notes",
+            f"/api/v1/shots/{shot.id}/notes",
             json={"project_id": str(project.id), "body": "Shot feedback"},
             headers=headers,
         )
@@ -220,7 +220,7 @@ class TestCreateNote:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/notes",
+            "/api/v1/notes",
             json={
                 "project_id": str(project.id),
                 "entity_type": "project",
@@ -241,7 +241,7 @@ class TestCreateNote:
         project = await _create_project(db_session, admin)
 
         resp = await client.post(
-            "/notes",
+            "/api/v1/notes",
             json={
                 "project_id": str(project.id),
                 "entity_type": "project",
@@ -273,7 +273,7 @@ class TestGetNote:
         headers = _auth_headers(admin)
         note = await _create_note_via_api(client, project.id, "project", project.id, headers)
 
-        resp = await client.get(f"/notes/{note['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/notes/{note['id']}", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -288,7 +288,7 @@ class TestGetNote:
         admin = await _create_user(db_session, "admin-get404@note.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/notes/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(f"/api/v1/notes/{uuid.uuid4()}", headers=_auth_headers(admin))
 
         assert resp.status_code == 404
 
@@ -303,7 +303,7 @@ class TestGetNote:
             client, project.id, "project", project.id, _auth_headers(admin)
         )
 
-        resp = await client.get(f"/notes/{note['id']}")
+        resp = await client.get(f"/api/v1/notes/{note['id']}")
 
         assert resp.status_code == 401
 
@@ -326,7 +326,7 @@ class TestUpdateNote:
         note = await _create_note_via_api(client, project.id, "project", project.id, headers)
 
         resp = await client.patch(
-            f"/notes/{note['id']}",
+            f"/api/v1/notes/{note['id']}",
             json={"body": "Updated body"},
             headers=headers,
         )
@@ -348,7 +348,7 @@ class TestUpdateNote:
         )
 
         resp = await client.patch(
-            f"/notes/{note['id']}",
+            f"/api/v1/notes/{note['id']}",
             json={"is_client_visible": True},
             headers=headers,
         )
@@ -374,7 +374,7 @@ class TestArchiveNote:
         headers = _auth_headers(admin)
         note = await _create_note_via_api(client, project.id, "project", project.id, headers)
 
-        resp = await client.delete(f"/notes/{note['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/notes/{note['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -399,7 +399,7 @@ class TestReplyToNote:
         )
 
         resp = await client.post(
-            f"/notes/{parent['id']}/reply",
+            f"/api/v1/notes/{parent['id']}/reply",
             json={"body": "This is a reply"},
             headers=headers,
         )
@@ -422,17 +422,17 @@ class TestReplyToNote:
             client, project.id, "project", project.id, headers, body="Thread parent"
         )
         await client.post(
-            f"/notes/{parent['id']}/reply",
+            f"/api/v1/notes/{parent['id']}/reply",
             json={"body": "Reply 1"},
             headers=headers,
         )
         await client.post(
-            f"/notes/{parent['id']}/reply",
+            f"/api/v1/notes/{parent['id']}/reply",
             json={"body": "Reply 2"},
             headers=headers,
         )
 
-        resp = await client.get(f"/notes/{parent['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/notes/{parent['id']}", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()["replies"]) == 2
@@ -456,17 +456,17 @@ class TestShotNotes:
         headers = _auth_headers(admin)
 
         await client.post(
-            f"/shots/{shot.id}/notes",
+            f"/api/v1/shots/{shot.id}/notes",
             json={"project_id": str(project.id), "body": "Note 1"},
             headers=headers,
         )
         await client.post(
-            f"/shots/{shot.id}/notes",
+            f"/api/v1/shots/{shot.id}/notes",
             json={"project_id": str(project.id), "body": "Note 2"},
             headers=headers,
         )
 
-        resp = await client.get(f"/shots/{shot.id}/notes", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/notes", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -490,17 +490,17 @@ class TestProjectNotes:
         headers = _auth_headers(admin)
 
         await client.post(
-            f"/projects/{project.id}/notes",
+            f"/api/v1/projects/{project.id}/notes",
             json={"body": "Project note 1"},
             headers=headers,
         )
         await client.post(
-            f"/projects/{project.id}/notes",
+            f"/api/v1/projects/{project.id}/notes",
             json={"body": "Project note 2"},
             headers=headers,
         )
 
-        resp = await client.get(f"/projects/{project.id}/notes", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/notes", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -525,7 +525,7 @@ class TestAssetNotes:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/assets/{asset.id}/notes",
+            f"/api/v1/assets/{asset.id}/notes",
             json={"project_id": str(project.id), "body": "Asset feedback note"},
             headers=headers,
         )
@@ -548,17 +548,17 @@ class TestAssetNotes:
         headers = _auth_headers(admin)
 
         await client.post(
-            f"/assets/{asset.id}/notes",
+            f"/api/v1/assets/{asset.id}/notes",
             json={"project_id": str(project.id), "body": "Asset note 1"},
             headers=headers,
         )
         await client.post(
-            f"/assets/{asset.id}/notes",
+            f"/api/v1/assets/{asset.id}/notes",
             json={"project_id": str(project.id), "body": "Asset note 2"},
             headers=headers,
         )
 
-        resp = await client.get(f"/assets/{asset.id}/notes", headers=headers)
+        resp = await client.get(f"/api/v1/assets/{asset.id}/notes", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -597,7 +597,7 @@ class TestPipelineTaskNotes:
         await db_session.refresh(task)
 
         resp = await client.post(
-            f"/pipeline-tasks/{task.id}/notes",
+            f"/api/v1/pipeline-tasks/{task.id}/notes",
             json={"project_id": str(project.id), "body": "Task feedback note"},
             headers=headers,
         )
@@ -633,17 +633,17 @@ class TestPipelineTaskNotes:
         await db_session.refresh(task)
 
         await client.post(
-            f"/pipeline-tasks/{task.id}/notes",
+            f"/api/v1/pipeline-tasks/{task.id}/notes",
             json={"project_id": str(project.id), "body": "Task note 1"},
             headers=headers,
         )
         await client.post(
-            f"/pipeline-tasks/{task.id}/notes",
+            f"/api/v1/pipeline-tasks/{task.id}/notes",
             json={"project_id": str(project.id), "body": "Task note 2"},
             headers=headers,
         )
 
-        resp = await client.get(f"/pipeline-tasks/{task.id}/notes", headers=headers)
+        resp = await client.get(f"/api/v1/pipeline-tasks/{task.id}/notes", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()

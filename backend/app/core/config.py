@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     login_rate_limit_max_attempts: int = Field(default=5, ge=1, le=100)
     login_rate_limit_window_min: int = Field(default=15, ge=1, le=1440)
 
+    # General API rate limit (fixed window per user/IP)
+    rate_limit_enabled: bool = True
+    rate_limit_max_requests: int = Field(default=120, ge=1)
+    rate_limit_window_seconds: int = Field(default=60, ge=1)
+
     # Storage (MinIO / S3)
     storage_backend: str = "local"
     local_storage_root: str = "./data/storage"
@@ -49,7 +54,8 @@ class Settings(BaseSettings):
     s3_endpoint_url: str = ""
     s3_access_key: str = ""
     s3_secret_key: str = ""
-    s3_bucket: str = "vfxhub"
+    s3_bucket: str = "pipeline-production-hub"
+    s3_region: str = "us-east-1"
 
     @field_validator("jwt_secret")
     @classmethod

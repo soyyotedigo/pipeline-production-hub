@@ -1,4 +1,4 @@
-# Observability
+		# Observability
 
 Pipeline Production Hub implements structured logging, request tracing, and Prometheus metrics for production monitoring.
 
@@ -65,6 +65,43 @@ sequenceDiagram
 ```
 
 On exception, `request.failed` is logged with `duration_ms` and the exception is re-raised.
+
+---
+
+## Rate Limit Middleware
+
+`RateLimitMiddleware` in `backend/app/api/middleware/rate_limit.py` applies a fixed-window rate limiter on every non-exempt route.
+
+Identity is resolved per request:
+
+- authenticated requests: `user:{sub}` (extracted from Bearer token).
+- unauthenticated requests: `ip:{client_host}`.
+
+Every response — allowed or rejected — gets three headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Max requests in the current window |
+| `X-RateLimit-Remaining` | Remaining requests in the window |
+| `X-RateLimit-Reset` | Seconds until the window resets |
+
+When the limit is exceeded the middleware returns `429 Too Many Requests` with a `Retry-After` header and the following JSON body:
+
+```json
+{
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Rate limit exceeded",
+    "detail": {
+      "limit": 120,
+      "window_seconds": 60,
+      "retry_after_seconds": 45
+    }
+  }
+}
+```
+
+If Redis is unavailable the middleware fails open — the request proceeds normally.
 
 ---
 

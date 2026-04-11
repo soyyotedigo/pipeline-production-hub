@@ -147,7 +147,7 @@ async def _create_template_via_api(
     steps: list[dict] | None = None,
 ) -> dict:
     resp = await client.post(
-        "/pipeline-templates",
+        "/api/v1/pipeline-templates",
         json={
             "name": name,
             "project_type": project_type,
@@ -174,7 +174,7 @@ class TestCreateTemplate:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            "/pipeline-templates",
+            "/api/v1/pipeline-templates",
             json={
                 "name": "VFX Film Pipeline",
                 "project_type": "film",
@@ -198,7 +198,7 @@ class TestCreateTemplate:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            "/pipeline-templates",
+            "/api/v1/pipeline-templates",
             json={"name": "Empty", "project_type": "film", "steps": []},
             headers=_auth_headers(admin),
         )
@@ -211,7 +211,7 @@ class TestCreateTemplate:
         db_session: AsyncSession,
     ) -> None:
         resp = await client.post(
-            "/pipeline-templates",
+            "/api/v1/pipeline-templates",
             json={"name": "No Auth", "project_type": "film", "steps": STEP_PAYLOAD},
         )
 
@@ -230,7 +230,7 @@ class TestListGetTemplate:
         await _create_template_via_api(client, headers, name="T1")
         await _create_template_via_api(client, headers, name="T2")
 
-        resp = await client.get("/pipeline-templates", headers=headers)
+        resp = await client.get("/api/v1/pipeline-templates", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -247,7 +247,7 @@ class TestListGetTemplate:
         await _create_template_via_api(client, headers, name="FilmT", project_type="film")
         await _create_template_via_api(client, headers, name="GameT", project_type="game")
 
-        resp = await client.get("/pipeline-templates?project_type=film", headers=headers)
+        resp = await client.get("/api/v1/pipeline-templates?project_type=film", headers=headers)
 
         assert resp.status_code == 200
         items = resp.json()["items"]
@@ -263,7 +263,7 @@ class TestListGetTemplate:
         headers = _auth_headers(admin)
         created = await _create_template_via_api(client, headers, name="GetMe")
 
-        resp = await client.get(f"/pipeline-templates/{created['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/pipeline-templates/{created['id']}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["name"] == "GetMe"
@@ -276,7 +276,9 @@ class TestListGetTemplate:
         admin = await _create_user(db_session, "admin-get404@pt.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/pipeline-templates/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(
+            f"/api/v1/pipeline-templates/{uuid.uuid4()}", headers=_auth_headers(admin)
+        )
 
         assert resp.status_code == 404
 
@@ -293,7 +295,7 @@ class TestUpdateArchiveDeleteTemplate:
         created = await _create_template_via_api(client, headers, name="Before")
 
         resp = await client.patch(
-            f"/pipeline-templates/{created['id']}",
+            f"/api/v1/pipeline-templates/{created['id']}",
             json={"name": "After"},
             headers=headers,
         )
@@ -312,7 +314,7 @@ class TestUpdateArchiveDeleteTemplate:
         created = await _create_template_via_api(client, headers, name="ArchMe")
 
         resp = await client.post(
-            f"/pipeline-templates/{created['id']}/archive",
+            f"/api/v1/pipeline-templates/{created['id']}/archive",
             headers=headers,
         )
 
@@ -329,7 +331,7 @@ class TestUpdateArchiveDeleteTemplate:
         headers = _auth_headers(admin)
         created = await _create_template_via_api(client, headers, name="DelMe")
 
-        resp = await client.delete(f"/pipeline-templates/{created['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/pipeline-templates/{created['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -353,7 +355,7 @@ class TestApplyTemplate:
         template = await _create_template_via_api(client, headers, name="ApplyT")
 
         resp = await client.post(
-            f"/pipeline-templates/{template['id']}/apply",
+            f"/api/v1/pipeline-templates/{template['id']}/apply",
             json={"entity_type": "shot", "entity_id": str(shot.id)},
             headers=headers,
         )
@@ -383,7 +385,7 @@ class TestShotTasks:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
@@ -405,17 +407,17 @@ class TestShotTasks:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
         await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Animation", "step_type": "animation", "order": 2},
             headers=headers,
         )
 
-        resp = await client.get(f"/shots/{shot.id}/tasks", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/tasks", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -432,12 +434,12 @@ class TestShotTasks:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
 
-        resp = await client.get(f"/shots/{shot.id}/tasks?status=pending", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/tasks?status=pending", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -461,7 +463,7 @@ class TestAssetTasks:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/assets/{asset.id}/tasks",
+            f"/api/v1/assets/{asset.id}/tasks",
             json={"step_name": "Modeling", "step_type": "modeling", "order": 1},
             headers=headers,
         )
@@ -487,13 +489,13 @@ class TestTaskOperations:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         task_resp = await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
         task_id = task_resp.json()["id"]
 
-        resp = await client.get(f"/pipeline-tasks/{task_id}", headers=headers)
+        resp = await client.get(f"/api/v1/pipeline-tasks/{task_id}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["id"] == task_id
@@ -506,7 +508,9 @@ class TestTaskOperations:
         admin = await _create_user(db_session, "admin-task404@pt.test")
         await _assign_role(db_session, admin.id, RoleName.admin)
 
-        resp = await client.get(f"/pipeline-tasks/{uuid.uuid4()}", headers=_auth_headers(admin))
+        resp = await client.get(
+            f"/api/v1/pipeline-tasks/{uuid.uuid4()}", headers=_auth_headers(admin)
+        )
 
         assert resp.status_code == 404
 
@@ -521,14 +525,14 @@ class TestTaskOperations:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         task_resp = await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
         task_id = task_resp.json()["id"]
 
         resp = await client.patch(
-            f"/pipeline-tasks/{task_id}",
+            f"/api/v1/pipeline-tasks/{task_id}",
             json={"notes": "Updated notes"},
             headers=headers,
         )
@@ -547,14 +551,14 @@ class TestTaskOperations:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         task_resp = await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
         task_id = task_resp.json()["id"]
 
         resp = await client.patch(
-            f"/pipeline-tasks/{task_id}/status",
+            f"/api/v1/pipeline-tasks/{task_id}/status",
             json={"status": "in_progress"},
             headers=headers,
         )
@@ -575,13 +579,13 @@ class TestTaskOperations:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         task_resp = await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
         task_id = task_resp.json()["id"]
 
-        resp = await client.post(f"/pipeline-tasks/{task_id}/archive", headers=headers)
+        resp = await client.post(f"/api/v1/pipeline-tasks/{task_id}/archive", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["archived_at"] is not None
@@ -597,12 +601,12 @@ class TestTaskOperations:
         shot = await _create_shot(db_session, project)
         headers = _auth_headers(admin)
         task_resp = await client.post(
-            f"/shots/{shot.id}/tasks",
+            f"/api/v1/shots/{shot.id}/tasks",
             json={"step_name": "Layout", "step_type": "layout", "order": 1},
             headers=headers,
         )
         task_id = task_resp.json()["id"]
 
-        resp = await client.delete(f"/pipeline-tasks/{task_id}", headers=headers)
+        resp = await client.delete(f"/api/v1/pipeline-tasks/{task_id}", headers=headers)
 
         assert resp.status_code == 204

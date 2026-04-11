@@ -31,6 +31,7 @@ flowchart LR
 | Variable | Type | Default | Validation | Description |
 |----------|------|---------|------------|-------------|
 | `APP_ENV` | str | `development` | — | Runtime environment |
+| `CORS_ORIGINS` | str | `*` | — | Comma-separated list of allowed CORS origins |
 
 ### Database
 
@@ -61,8 +62,18 @@ flowchart LR
 | Variable | Type | Default | Validation | Description |
 |----------|------|---------|------------|-------------|
 | `BCRYPT_ROUNDS` | int | `12` | `4–31` | Bcrypt hashing rounds |
-| `LOGIN_RATE_LIMIT_MAX_ATTEMPTS` | int | `5` | `1–100` | Max login attempts |
-| `LOGIN_RATE_LIMIT_WINDOW_MIN` | int | `15` | `1–1440` | Rate limit window (minutes) |
+| `LOGIN_RATE_LIMIT_MAX_ATTEMPTS` | int | `5` | `1–100` | Max failed login attempts before block |
+| `LOGIN_RATE_LIMIT_WINDOW_MIN` | int | `15` | `1–1440` | Login rate limit window (minutes) |
+
+### Global API Rate Limiting
+
+Applied to all routes except `/health`, `/metrics`, `/docs`, `/redoc`, `/openapi.json`.
+
+| Variable | Type | Default | Validation | Description |
+|----------|------|---------|------------|-------------|
+| `RATE_LIMIT_ENABLED` | bool | `true` | — | Enable or disable the rate limiter |
+| `RATE_LIMIT_MAX_REQUESTS` | int | `120` | `≥ 1` | Max requests per window |
+| `RATE_LIMIT_WINDOW_SECONDS` | int | `60` | `≥ 1` | Fixed-window duration (seconds) |
 
 ### Storage
 

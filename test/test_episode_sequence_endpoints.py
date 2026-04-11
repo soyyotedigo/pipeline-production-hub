@@ -79,7 +79,7 @@ async def test_episode_and_sequence_lifecycle_with_archive_restore_and_force_del
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Episode Seq Project", "code": "ESP23"},
         headers=_auth_headers(admin),
     )
@@ -88,7 +88,7 @@ async def test_episode_and_sequence_lifecycle_with_archive_restore_and_force_del
     await _assign_role(db_session, lead.id, RoleName.lead, uuid.UUID(project_id))
 
     create_episode = await client.post(
-        f"/projects/{project_id}/episodes",
+        f"/api/v1/projects/{project_id}/episodes",
         json={"name": "Episode 1", "code": "EP01"},
         headers=_auth_headers(lead),
     )
@@ -96,7 +96,7 @@ async def test_episode_and_sequence_lifecycle_with_archive_restore_and_force_del
     episode_id = create_episode.json()["id"]
 
     patch_episode = await client.patch(
-        f"/episodes/{episode_id}",
+        f"/api/v1/episodes/{episode_id}",
         json={"name": "Episode 01"},
         headers=_auth_headers(lead),
     )
@@ -104,28 +104,28 @@ async def test_episode_and_sequence_lifecycle_with_archive_restore_and_force_del
     assert patch_episode.json()["name"] == "Episode 01"
 
     archive_episode = await client.post(
-        f"/episodes/{episode_id}/archive",
+        f"/api/v1/episodes/{episode_id}/archive",
         headers=_auth_headers(lead),
     )
     assert archive_episode.status_code == 200
     assert archive_episode.json()["archived_at"] is not None
 
     list_episodes_hidden = await client.get(
-        f"/projects/{project_id}/episodes",
+        f"/api/v1/projects/{project_id}/episodes",
         headers=_auth_headers(lead),
     )
     assert list_episodes_hidden.status_code == 200
     assert list_episodes_hidden.json()["total"] == 0
 
     restore_episode = await client.post(
-        f"/episodes/{episode_id}/restore",
+        f"/api/v1/episodes/{episode_id}/restore",
         headers=_auth_headers(lead),
     )
     assert restore_episode.status_code == 200
     assert restore_episode.json()["archived_at"] is None
 
     create_sequence = await client.post(
-        f"/projects/{project_id}/sequences",
+        f"/api/v1/projects/{project_id}/sequences",
         json={
             "name": "Sequence 1",
             "code": "SQ01",
@@ -138,7 +138,7 @@ async def test_episode_and_sequence_lifecycle_with_archive_restore_and_force_del
     sequence_id = create_sequence.json()["id"]
 
     patch_sequence = await client.patch(
-        f"/sequences/{sequence_id}",
+        f"/api/v1/sequences/{sequence_id}",
         json={"name": "Sequence 01", "scope_type": "spot"},
         headers=_auth_headers(lead),
     )
@@ -146,39 +146,39 @@ async def test_episode_and_sequence_lifecycle_with_archive_restore_and_force_del
     assert patch_sequence.json()["name"] == "Sequence 01"
 
     archive_sequence = await client.post(
-        f"/sequences/{sequence_id}/archive",
+        f"/api/v1/sequences/{sequence_id}/archive",
         headers=_auth_headers(lead),
     )
     assert archive_sequence.status_code == 200
     assert archive_sequence.json()["archived_at"] is not None
 
     restore_sequence = await client.post(
-        f"/sequences/{sequence_id}/restore",
+        f"/api/v1/sequences/{sequence_id}/restore",
         headers=_auth_headers(lead),
     )
     assert restore_sequence.status_code == 200
     assert restore_sequence.json()["archived_at"] is None
 
     deny_sequence_delete = await client.delete(
-        f"/sequences/{sequence_id}?force=true",
+        f"/api/v1/sequences/{sequence_id}?force=true",
         headers=_auth_headers(lead),
     )
     assert deny_sequence_delete.status_code == 403
 
     allow_sequence_delete = await client.delete(
-        f"/sequences/{sequence_id}?force=true",
+        f"/api/v1/sequences/{sequence_id}?force=true",
         headers=_auth_headers(admin),
     )
     assert allow_sequence_delete.status_code == 204
 
     deny_episode_delete = await client.delete(
-        f"/episodes/{episode_id}?force=true",
+        f"/api/v1/episodes/{episode_id}?force=true",
         headers=_auth_headers(lead),
     )
     assert deny_episode_delete.status_code == 403
 
     allow_episode_delete = await client.delete(
-        f"/episodes/{episode_id}?force=true",
+        f"/api/v1/episodes/{episode_id}?force=true",
         headers=_auth_headers(admin),
     )
     assert allow_episode_delete.status_code == 204

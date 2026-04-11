@@ -154,7 +154,7 @@ class TestCreateLink:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset.id)},
             headers=headers,
         )
@@ -178,7 +178,7 @@ class TestCreateLink:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset.id), "link_type": "references"},
             headers=headers,
         )
@@ -199,10 +199,10 @@ class TestCreateLink:
         headers = _auth_headers(admin)
 
         await client.post(
-            f"/shots/{shot.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
+            f"/api/v1/shots/{shot.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
         )
         resp = await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset.id)},
             headers=headers,
         )
@@ -223,7 +223,7 @@ class TestCreateLink:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset.id)},
             headers=headers,
         )
@@ -241,7 +241,7 @@ class TestCreateLink:
         asset = await _create_asset(db_session, project)
 
         resp = await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset.id)},
         )
 
@@ -267,13 +267,13 @@ class TestListShotAssets:
         asset_b = await _create_asset(db_session, project, name="AssetB")
         headers = _auth_headers(admin)
         await client.post(
-            f"/shots/{shot.id}/assets", json={"asset_id": str(asset_a.id)}, headers=headers
+            f"/api/v1/shots/{shot.id}/assets", json={"asset_id": str(asset_a.id)}, headers=headers
         )
         await client.post(
-            f"/shots/{shot.id}/assets", json={"asset_id": str(asset_b.id)}, headers=headers
+            f"/api/v1/shots/{shot.id}/assets", json={"asset_id": str(asset_b.id)}, headers=headers
         )
 
-        resp = await client.get(f"/shots/{shot.id}/assets", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/assets", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -293,17 +293,17 @@ class TestListShotAssets:
         asset_b = await _create_asset(db_session, project, name="FilterB")
         headers = _auth_headers(admin)
         await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset_a.id), "link_type": "uses"},
             headers=headers,
         )
         await client.post(
-            f"/shots/{shot.id}/assets",
+            f"/api/v1/shots/{shot.id}/assets",
             json={"asset_id": str(asset_b.id), "link_type": "references"},
             headers=headers,
         )
 
-        resp = await client.get(f"/shots/{shot.id}/assets?link_type=uses", headers=headers)
+        resp = await client.get(f"/api/v1/shots/{shot.id}/assets?link_type=uses", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -329,7 +329,7 @@ class TestBulkLink:
         headers = _auth_headers(admin)
 
         resp = await client.post(
-            f"/shots/{shot.id}/assets/bulk",
+            f"/api/v1/shots/{shot.id}/assets/bulk",
             json={"links": [{"asset_id": str(asset_a.id)}, {"asset_id": str(asset_b.id)}]},
             headers=headers,
         )
@@ -351,11 +351,11 @@ class TestBulkLink:
         asset = await _create_asset(db_session, project, name="BulkDup")
         headers = _auth_headers(admin)
         await client.post(
-            f"/shots/{shot.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
+            f"/api/v1/shots/{shot.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
         )
 
         resp = await client.post(
-            f"/shots/{shot.id}/assets/bulk",
+            f"/api/v1/shots/{shot.id}/assets/bulk",
             json={"links": [{"asset_id": str(asset.id)}]},
             headers=headers,
         )
@@ -385,13 +385,13 @@ class TestListAssetShots:
         asset = await _create_asset(db_session, project, name="SharedAsset")
         headers = _auth_headers(admin)
         await client.post(
-            f"/shots/{shot_a.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
+            f"/api/v1/shots/{shot_a.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
         )
         await client.post(
-            f"/shots/{shot_b.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
+            f"/api/v1/shots/{shot_b.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
         )
 
-        resp = await client.get(f"/assets/{asset.id}/shots", headers=headers)
+        resp = await client.get(f"/api/v1/assets/{asset.id}/shots", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -416,11 +416,11 @@ class TestDeleteLink:
         asset = await _create_asset(db_session, project, name="DelAsset")
         headers = _auth_headers(admin)
         link_resp = await client.post(
-            f"/shots/{shot.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
+            f"/api/v1/shots/{shot.id}/assets", json={"asset_id": str(asset.id)}, headers=headers
         )
         link_id = link_resp.json()["id"]
 
-        resp = await client.delete(f"/shot-asset-links/{link_id}", headers=headers)
+        resp = await client.delete(f"/api/v1/shot-asset-links/{link_id}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -433,7 +433,7 @@ class TestDeleteLink:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.delete(
-            f"/shot-asset-links/{uuid.uuid4()}", headers=_auth_headers(admin)
+            f"/api/v1/shot-asset-links/{uuid.uuid4()}", headers=_auth_headers(admin)
         )
 
         assert resp.status_code == 404

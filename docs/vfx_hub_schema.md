@@ -40,12 +40,12 @@ Project
 
 ### Project types and hierarchy behavior
 
-| project_type | Hierarchy |
-|---|---|
-| `series` | Project → Episode → Sequence → Shot |
-| `feature` | Project → Sequence → Shot |
-| `commercial` | Project → Sequence → Shot |
-| `short` | Project → Sequence → Shot |
+| project_type | Hierarchy                           |
+| ------------ | ----------------------------------- |
+| `series`     | Project → Episode → Sequence → Shot |
+| `feature`    | Project → Sequence → Shot           |
+| `commercial` | Project → Sequence → Shot           |
+| `short`      | Project → Sequence → Shot           |
 
 The Episode layer is **optional** and only active when `project_type = "series"`. All other types skip directly to Sequence.
 

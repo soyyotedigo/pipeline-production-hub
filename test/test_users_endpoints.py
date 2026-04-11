@@ -92,7 +92,7 @@ class TestCreateUser:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            "/users",
+            "/api/v1/users",
             json={"email": "newuser@example.com", "password": "pass1234"},
             headers=_auth_headers(admin),
         )
@@ -113,7 +113,7 @@ class TestCreateUser:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            "/users",
+            "/api/v1/users",
             json={
                 "email": "full@example.com",
                 "password": "pass1234",
@@ -141,12 +141,12 @@ class TestCreateUser:
         headers = _auth_headers(admin)
 
         await client.post(
-            "/users",
+            "/api/v1/users",
             json={"email": "dup@example.com", "password": "pass1234"},
             headers=headers,
         )
         resp = await client.post(
-            "/users",
+            "/api/v1/users",
             json={"email": "dup@example.com", "password": "pass1234"},
             headers=headers,
         )
@@ -162,7 +162,7 @@ class TestCreateUser:
         await _assign_role(db_session, artist.id, RoleName.artist)
 
         resp = await client.post(
-            "/users",
+            "/api/v1/users",
             json={"email": "blocked@example.com", "password": "pass1234"},
             headers=_auth_headers(artist),
         )
@@ -175,7 +175,7 @@ class TestCreateUser:
         db_session: AsyncSession,
     ) -> None:
         resp = await client.post(
-            "/users",
+            "/api/v1/users",
             json={"email": "noauth@example.com", "password": "pass1234"},
         )
 
@@ -198,7 +198,7 @@ class TestListUsers:
         await _create_user(db_session, "user-a@usr.test")
         await _create_user(db_session, "user-b@usr.test")
 
-        resp = await client.get("/users", headers=_auth_headers(supervisor))
+        resp = await client.get("/api/v1/users", headers=_auth_headers(supervisor))
 
         assert resp.status_code == 200
         data = resp.json()
@@ -213,7 +213,7 @@ class TestListUsers:
         artist = await _create_user(db_session, "artist-list@usr.test")
         await _assign_role(db_session, artist.id, RoleName.artist)
 
-        resp = await client.get("/users", headers=_auth_headers(artist))
+        resp = await client.get("/api/v1/users", headers=_auth_headers(artist))
 
         assert resp.status_code == 403
 
@@ -227,7 +227,7 @@ class TestListUsers:
         for i in range(3):
             await _create_user(db_session, f"pager{i}@usr.test")
 
-        resp = await client.get("/users?limit=2&offset=0", headers=_auth_headers(supervisor))
+        resp = await client.get("/api/v1/users?limit=2&offset=0", headers=_auth_headers(supervisor))
 
         assert resp.status_code == 200
         assert len(resp.json()["items"]) == 2
@@ -240,7 +240,7 @@ class TestListUsers:
         supervisor = await _create_user(db_session, "sup-filter@usr.test")
         await _assign_role(db_session, supervisor.id, RoleName.supervisor)
 
-        resp = await client.get("/users?is_active=false", headers=_auth_headers(supervisor))
+        resp = await client.get("/api/v1/users?is_active=false", headers=_auth_headers(supervisor))
 
         assert resp.status_code == 200
 
@@ -249,7 +249,7 @@ class TestListUsers:
         client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
-        resp = await client.get("/users")
+        resp = await client.get("/api/v1/users")
 
         assert resp.status_code == 401
 
@@ -267,7 +267,7 @@ class TestGetUser:
     ) -> None:
         user = await _create_user(db_session, "self-get@usr.test")
 
-        resp = await client.get(f"/users/{user.id}", headers=_auth_headers(user))
+        resp = await client.get(f"/api/v1/users/{user.id}", headers=_auth_headers(user))
 
         assert resp.status_code == 200
         data = resp.json()
@@ -282,7 +282,7 @@ class TestGetUser:
         user = await _create_user(db_session, "admin-get404@usr.test")
         await _assign_role(db_session, user.id, RoleName.admin)
 
-        resp = await client.get(f"/users/{uuid.uuid4()}", headers=_auth_headers(user))
+        resp = await client.get(f"/api/v1/users/{uuid.uuid4()}", headers=_auth_headers(user))
 
         assert resp.status_code == 404
 
@@ -293,7 +293,7 @@ class TestGetUser:
     ) -> None:
         user = await _create_user(db_session, "noauth-get@usr.test")
 
-        resp = await client.get(f"/users/{user.id}")
+        resp = await client.get(f"/api/v1/users/{user.id}")
 
         assert resp.status_code == 401
 
@@ -312,7 +312,7 @@ class TestUpdateUser:
         user = await _create_user(db_session, "self-upd@usr.test")
 
         resp = await client.patch(
-            f"/users/{user.id}",
+            f"/api/v1/users/{user.id}",
             json={"first_name": "Updated", "last_name": "Name"},
             headers=_auth_headers(user),
         )
@@ -332,7 +332,7 @@ class TestUpdateUser:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.patch(
-            f"/users/{other.id}",
+            f"/api/v1/users/{other.id}",
             json={"display_name": "admin-set"},
             headers=_auth_headers(admin),
         )
@@ -349,7 +349,7 @@ class TestUpdateUser:
         user_b = await _create_user(db_session, "userb-upd@usr.test")
 
         resp = await client.patch(
-            f"/users/{user_b.id}",
+            f"/api/v1/users/{user_b.id}",
             json={"first_name": "Hacked"},
             headers=_auth_headers(user_a),
         )
@@ -365,7 +365,7 @@ class TestUpdateUser:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.patch(
-            f"/users/{uuid.uuid4()}",
+            f"/api/v1/users/{uuid.uuid4()}",
             json={"first_name": "Ghost"},
             headers=_auth_headers(admin),
         )
@@ -389,7 +389,7 @@ class TestDeactivateUser:
         await _assign_role(db_session, admin.id, RoleName.admin)
 
         resp = await client.post(
-            f"/users/{target.id}/deactivate",
+            f"/api/v1/users/{target.id}/deactivate",
             headers=_auth_headers(admin),
         )
 
@@ -406,7 +406,7 @@ class TestDeactivateUser:
         await _assign_role(db_session, artist.id, RoleName.artist)
 
         resp = await client.post(
-            f"/users/{target.id}/deactivate",
+            f"/api/v1/users/{target.id}/deactivate",
             headers=_auth_headers(artist),
         )
 
@@ -431,7 +431,7 @@ class TestUserRoles:
         await _ensure_role(db_session, RoleName.artist)
 
         resp = await client.post(
-            f"/users/{target.id}/roles",
+            f"/api/v1/users/{target.id}/roles",
             json={"role_name": "artist"},
             headers=_auth_headers(admin),
         )
@@ -452,7 +452,7 @@ class TestUserRoles:
         await _assign_role(db_session, target.id, RoleName.artist)
 
         resp = await client.get(
-            f"/users/{target.id}/roles",
+            f"/api/v1/users/{target.id}/roles",
             headers=_auth_headers(admin),
         )
 
@@ -470,7 +470,7 @@ class TestUserRoles:
         await _assign_role(db_session, target.id, RoleName.artist)
 
         resp = await client.delete(
-            f"/users/{target.id}/roles/artist",
+            f"/api/v1/users/{target.id}/roles/artist",
             headers=_auth_headers(admin),
         )
 

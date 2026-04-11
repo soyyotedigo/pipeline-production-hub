@@ -306,6 +306,13 @@ class ScaffoldRequest(BaseModel):
             "Defaults to the LOCAL_STORAGE_ROOT setting. Example: 'E:/projects'."
         ),
     )
+    create: bool = Field(
+        default=False,
+        description=(
+            "If true, create the directories on the local filesystem. "
+            "Works regardless of the configured storage backend."
+        ),
+    )
 
 
 class ScaffoldResponse(BaseModel):
@@ -313,3 +320,4 @@ class ScaffoldResponse(BaseModel):
     project_code: str
     created_dirs: list[str]
     total: int
+    skipped: int = 0

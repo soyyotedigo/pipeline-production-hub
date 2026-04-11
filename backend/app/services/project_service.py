@@ -4,6 +4,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from io import StringIO
+from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -1302,11 +1303,20 @@ class ProjectService:
             _add(os.path.join(asset_root, "work"))
             _add(os.path.join(asset_root, "publish"))
 
+        skipped = 0
+        if payload.create:
+            for d in dirs:
+                p = Path(d)
+                if p.exists():
+                    skipped += 1
+                p.mkdir(parents=True, exist_ok=True)
+
         return ScaffoldResponse(
             root=root,
             project_code=project.code,
             created_dirs=dirs,
             total=len(dirs),
+            skipped=skipped,
         )
 
     def _build_project_csv_bytes(

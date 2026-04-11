@@ -118,7 +118,7 @@ async def _create_timelog_via_api(
     }
     if description:
         payload["description"] = description
-    resp = await client.post("/timelogs", json=payload, headers=headers)
+    resp = await client.post("/api/v1/timelogs", json=payload, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -139,7 +139,7 @@ class TestCreateTimeLog:
         project = await _create_project(db_session, user)
 
         resp = await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={"project_id": str(project.id), "date": TODAY, "duration_minutes": 120},
             headers=_auth_headers(user),
         )
@@ -161,7 +161,7 @@ class TestCreateTimeLog:
         project = await _create_project(db_session, user)
 
         resp = await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={
                 "project_id": str(project.id),
                 "date": TODAY,
@@ -183,7 +183,7 @@ class TestCreateTimeLog:
         project = await _create_project(db_session, user)
 
         resp = await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={"project_id": str(project.id), "date": TOMORROW, "duration_minutes": 60},
             headers=_auth_headers(user),
         )
@@ -199,7 +199,7 @@ class TestCreateTimeLog:
         project = await _create_project(db_session, user)
 
         resp = await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={"project_id": str(project.id), "date": TODAY, "duration_minutes": 0},
             headers=_auth_headers(user),
         )
@@ -215,7 +215,7 @@ class TestCreateTimeLog:
         project = await _create_project(db_session, user)
 
         resp = await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={"project_id": str(project.id), "date": TODAY, "duration_minutes": 1441},
             headers=_auth_headers(user),
         )
@@ -231,7 +231,7 @@ class TestCreateTimeLog:
         project = await _create_project(db_session, user)
 
         resp = await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={"project_id": str(project.id), "date": TODAY, "duration_minutes": 60},
         )
 
@@ -254,7 +254,7 @@ class TestGetTimeLog:
         headers = _auth_headers(user)
         log = await _create_timelog_via_api(client, project.id, headers)
 
-        resp = await client.get(f"/timelogs/{log['id']}", headers=headers)
+        resp = await client.get(f"/api/v1/timelogs/{log['id']}", headers=headers)
 
         assert resp.status_code == 200
         assert resp.json()["id"] == log["id"]
@@ -266,7 +266,7 @@ class TestGetTimeLog:
     ) -> None:
         user = await _create_user(db_session, "user-get404@tl.test")
 
-        resp = await client.get(f"/timelogs/{uuid.uuid4()}", headers=_auth_headers(user))
+        resp = await client.get(f"/api/v1/timelogs/{uuid.uuid4()}", headers=_auth_headers(user))
 
         assert resp.status_code == 404
 
@@ -288,7 +288,7 @@ class TestUpdateTimeLog:
         log = await _create_timelog_via_api(client, project.id, headers, duration_minutes=60)
 
         resp = await client.patch(
-            f"/timelogs/{log['id']}",
+            f"/api/v1/timelogs/{log['id']}",
             json={"duration_minutes": 90, "description": "Updated"},
             headers=headers,
         )
@@ -309,7 +309,7 @@ class TestUpdateTimeLog:
         log = await _create_timelog_via_api(client, project.id, _auth_headers(owner))
 
         resp = await client.patch(
-            f"/timelogs/{log['id']}",
+            f"/api/v1/timelogs/{log['id']}",
             json={"duration_minutes": 200},
             headers=_auth_headers(other),
         )
@@ -333,7 +333,7 @@ class TestDeleteTimeLog:
         headers = _auth_headers(user)
         log = await _create_timelog_via_api(client, project.id, headers)
 
-        resp = await client.delete(f"/timelogs/{log['id']}", headers=headers)
+        resp = await client.delete(f"/api/v1/timelogs/{log['id']}", headers=headers)
 
         assert resp.status_code == 204
 
@@ -347,7 +347,7 @@ class TestDeleteTimeLog:
         project = await _create_project(db_session, owner)
         log = await _create_timelog_via_api(client, project.id, _auth_headers(owner))
 
-        resp = await client.delete(f"/timelogs/{log['id']}", headers=_auth_headers(other))
+        resp = await client.delete(f"/api/v1/timelogs/{log['id']}", headers=_auth_headers(other))
 
         assert resp.status_code == 403
 
@@ -370,7 +370,7 @@ class TestListProjectTimeLogs:
         await _create_timelog_via_api(client, project.id, headers, duration_minutes=60)
         await _create_timelog_via_api(client, project.id, headers, duration_minutes=120)
 
-        resp = await client.get(f"/projects/{project.id}/timelogs", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/timelogs", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) >= 2
@@ -388,7 +388,7 @@ class TestListProjectTimeLogs:
         await _create_timelog_via_api(client, project.id, headers, log_date=TODAY)
 
         resp = await client.get(
-            f"/projects/{project.id}/timelogs?date_from={TODAY}", headers=headers
+            f"/api/v1/projects/{project.id}/timelogs?date_from={TODAY}", headers=headers
         )
 
         assert resp.status_code == 200
@@ -413,7 +413,7 @@ class TestProjectTimeLogSummary:
         await _create_timelog_via_api(client, project.id, headers, duration_minutes=480)
         await _create_timelog_via_api(client, project.id, headers, duration_minutes=240)
 
-        resp = await client.get(f"/projects/{project.id}/timelogs/summary", headers=headers)
+        resp = await client.get(f"/api/v1/projects/{project.id}/timelogs/summary", headers=headers)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -438,7 +438,7 @@ class TestUserTimeLogs:
         await _create_timelog_via_api(client, project.id, headers)
         await _create_timelog_via_api(client, project.id, headers)
 
-        resp = await client.get(f"/users/{user.id}/timelogs", headers=headers)
+        resp = await client.get(f"/api/v1/users/{user.id}/timelogs", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) == 2
@@ -450,7 +450,7 @@ class TestUserTimeLogs:
     ) -> None:
         user = await _create_user(db_session, "user-noauth@tl.test")
 
-        resp = await client.get(f"/users/{user.id}/timelogs")
+        resp = await client.get(f"/api/v1/users/{user.id}/timelogs")
 
         assert resp.status_code == 401
 
@@ -499,7 +499,7 @@ class TestTaskTimeLogs:
 
         headers = _auth_headers(user)
         await client.post(
-            "/timelogs",
+            "/api/v1/timelogs",
             json={
                 "project_id": str(project.id),
                 "pipeline_task_id": str(task.id),
@@ -509,7 +509,7 @@ class TestTaskTimeLogs:
             headers=headers,
         )
 
-        resp = await client.get(f"/pipeline-tasks/{task.id}/timelogs", headers=headers)
+        resp = await client.get(f"/api/v1/pipeline-tasks/{task.id}/timelogs", headers=headers)
 
         assert resp.status_code == 200
         assert len(resp.json()) >= 1

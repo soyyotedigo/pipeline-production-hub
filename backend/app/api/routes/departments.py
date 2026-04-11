@@ -173,7 +173,12 @@ async def get_user_departments(
     return await service.get_user_departments(user_id=id)
 
 
-@department_members_router.delete("/{id}", status_code=204)
+@department_members_router.delete(
+    "/{id}",
+    status_code=204,
+    summary="Remove Department Member",
+    description="Remove a user from a department by department-member id.",
+)
 async def remove_department_member(
     id: uuid.UUID,
     current_user: CurrentUserDep,

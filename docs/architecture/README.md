@@ -15,7 +15,7 @@ This folder is the canonical technical reference for the repository. Files are n
 | 05 | [05-auth-rbac.md](./05-auth-rbac.md) | JWT auth, refresh/logout, role-based access control |
 | 06 | [06-files-storage.md](./06-files-storage.md) | Upload, download, versioning, checksum, storage backends |
 | 07 | [07-background-jobs-webhooks.md](./07-background-jobs-webhooks.md) | Worker, task types, webhook signing and delivery |
-| 08 | [08-production-features.md](./08-production-features.md) | Pipeline tasks, notes, versions, shot-asset links, playlists, departments, notifications, tags, timelogs, deliveries |
+| 08 | [08-production-features.md](./08-production-features.md) | Pipeline tasks, notes, versions, shot-asset links, playlists, departments, notifications, tags, timelogs, shot/asset workflow, code generator, deliveries |
 | 09 | [09-alembic-migrations.md](./09-alembic-migrations.md) | Migration chain, env.py, commands, enum patterns, conventions |
 | 10 | [10-configuration.md](./10-configuration.md) | Environment variables, Pydantic Settings, validators, full config reference |
 | 11 | [11-error-handling-api-conventions.md](./11-error-handling-api-conventions.md) | Exception hierarchy, JSON error format, pagination, route conventions |
@@ -34,7 +34,8 @@ This folder is the canonical technical reference for the repository. Files are n
 ```mermaid
 flowchart TD
     Client[Client / Frontend]
-    API[FastAPI API]
+    MW[Middleware\nCORS · RateLimit · RequestLogging]
+    API[FastAPI API v1]
     Services[Services]
     Repos[Repositories]
     PG[(PostgreSQL)]
@@ -42,11 +43,13 @@ flowchart TD
     Worker[Background worker]
     Storage[(Local storage / S3)]
 
-    Client --> API
+    Client --> MW
+    MW --> API
     API --> Services
     Services --> Repos
     Repos --> PG
     Services --> Redis
+    MW --> Redis
     Redis --> Worker
     Worker --> Redis
     Worker --> PG

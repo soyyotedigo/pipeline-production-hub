@@ -9,32 +9,35 @@
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![Coverage](https://img.shields.io/badge/Coverage-92%25-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-566%20passed-brightgreen)
+![MyPy](https://img.shields.io/badge/MyPy-0%20errors-blue)
 
 ---
 
 ## What this is
 
-Pipeline Production Hub is a backend REST API that manages the full production lifecycle of a VFX project: shots, assets, departments, pipeline tasks, client deliveries, hour tracking, and internal reviews.
+Pipeline Production Hub is a backend REST API that manages the full production lifecycle of creative projects: shots, assets, departments, pipeline tasks, client deliveries, hour tracking, and internal reviews.
 
-It was built as a portfolio project demonstrating production-grade patterns in FastAPI — async-first architecture, layered service design, RBAC, structured logging, Prometheus metrics, and pluggable cloud storage.
+It was built as a portfolio project demonstrating production-grade patterns in FastAPI — async-first architecture, layered service design, RBAC, structured logging, Prometheus metrics, and pluggable cloud storage. The system is flexible enough to support VFX studios, game development pipelines, animation houses, and other media production workflows.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | FastAPI + Uvicorn |
-| Database | PostgreSQL 16 (async via `asyncpg`) |
-| ORM / Migrations | SQLAlchemy 2.0 + Alembic |
-| Cache / Queue | Redis 7 (task queue, token blacklist, rate limiting) |
-| Auth | JWT (access + refresh tokens) + bcrypt |
-| Config | Pydantic Settings v2 |
-| Logging | structlog (structured JSON logs) |
-| Metrics | Prometheus + prometheus-fastapi-instrumentator |
-| Containerization | Docker / Docker Compose |
-| Testing | Pytest + httpx async client |
-| Code quality | Ruff, MyPy, Hatch |
+| Layer            | Technology                                           |
+| ---------------- | ---------------------------------------------------- |
+| Framework        | FastAPI + Uvicorn                                    |
+| Database         | PostgreSQL 16 (async via `asyncpg`)                  |
+| ORM / Migrations | SQLAlchemy 2.0 + Alembic                             |
+| Cache / Queue    | Redis 7 (task queue, token blacklist, rate limiting) |
+| Auth             | JWT (access + refresh tokens) + bcrypt               |
+| Config           | Pydantic Settings v2                                 |
+| Logging          | structlog (structured JSON logs)                     |
+| Metrics          | Prometheus + prometheus-fastapi-instrumentator       |
+| Containerization | Docker / Docker Compose                              |
+| Testing          | Pytest + httpx async client                          |
+| Code quality     | Ruff, MyPy, Hatch                                    |
 
 ---
 
@@ -60,6 +63,18 @@ Background Worker       ← separate process, consumes Redis queue
 ```
 
 All I/O is async. Background jobs (e.g. project exports) are enqueued to Redis and consumed by a dedicated worker process.
+
+---
+
+## Design Highlights
+
+- **Layered architecture** — strict separation: routers handle HTTP, services own business rules, repositories own persistence. No business logic leaks into routes.
+- **Async-first** — all I/O is async (`asyncpg`, `httpx`, Redis). No sync blocking anywhere in the request path.
+- **RBAC at service layer** — six roles (`admin`, `supervisor`, `lead`, `artist`, `worker`, `client`) enforced in service methods, not middleware, so authorization logic lives next to the domain it protects.
+- **Pluggable storage** — `local` and S3-compatible backends behind a common interface; swap with a single `STORAGE_BACKEND` env var.
+- **Background jobs via Redis queue** — heavy operations (project exports) are enqueued to Redis and consumed by a dedicated worker, decoupling API response time from job duration.
+- **Structured logging + Prometheus** — structlog emits JSON logs; `/metrics` exposes Prometheus histograms and gauges for active users and request latency.
+- **DCC integration examples** — publish scripts for Maya, Houdini, Nuke, and a standalone PySide6 GUI, demonstrating the artist-facing side of the pipeline.
 
 ---
 
@@ -151,6 +166,14 @@ Services will be available at:
 - **Interactive docs**: `http://localhost:8000/docs`
 - **Metrics**: `http://localhost:8000/metrics`
 
+### Apply database migrations
+
+Run this once after the first `docker compose up` (and after any future schema change):
+
+```bash
+docker compose exec api alembic upgrade head
+```
+
 ### Initialize demo data
 
 Seed the database with a complete demo dataset (roles, admin user, demo users, demo project, episodes, sequences, shots, assets, and project role assignments):
@@ -232,6 +255,17 @@ Environment overrides: `SMOKE_BASE_URL`, `SMOKE_EMAIL`, `SMOKE_PASSWORD`, `SMOKE
 
 ---
 
+### DCC integration examples
+
+Thin DCC-side publish examples live under `examples/dcc/`.
+
+- generic artist CLI publish flow
+- Nuke-oriented publish flow with live or mock DCC context
+
+Start here: [`examples/dcc/README.md`](./examples/dcc/README.md)
+
+---
+
 ### Code quality (lint, format, type check)
 
 Run linter:
@@ -290,6 +324,8 @@ pipeline-production-hub-dev/
 │   └── scripts/            # Seed script, background task worker
 ├── backend/alembic/        # Database migration versions
 ├── test/                   # Pytest test suite
+├── examples/
+│   └── dcc/                # Portfolio-oriented DCC / artist publish examples
 ├── docs/
 │   ├── architecture/       # Technical reference docs
 │   └── plans/              # Implementation plans
@@ -332,4 +368,3 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev,test]"
 ```
-

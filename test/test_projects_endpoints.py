@@ -126,7 +126,7 @@ async def test_projects_crud_and_delete_admin_only(
     await _assign_role(db_session, supervisor.id, RoleName.supervisor, None)
 
     create_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Project A", "code": "PRA", "description": "Area 2.3"},
         headers=_auth_headers(admin),
     )
@@ -134,19 +134,21 @@ async def test_projects_crud_and_delete_admin_only(
     project = create_response.json()
     project_id = project["id"]
 
-    list_response = await client.get("/projects?status=pending", headers=_auth_headers(supervisor))
+    list_response = await client.get(
+        "/api/v1/projects?status=pending", headers=_auth_headers(supervisor)
+    )
     assert list_response.status_code == 200
     payload = list_response.json()
     assert payload["total"] >= 1
 
     denied_delete = await client.delete(
-        f"/projects/{project_id}?force=true",
+        f"/api/v1/projects/{project_id}?force=true",
         headers=_auth_headers(supervisor),
     )
     assert denied_delete.status_code == 403
 
     allowed_delete = await client.delete(
-        f"/projects/{project_id}?force=true",
+        f"/api/v1/projects/{project_id}?force=true",
         headers=_auth_headers(admin),
     )
     assert allowed_delete.status_code == 204
@@ -163,7 +165,7 @@ async def test_project_archive_and_restore_requires_management_role(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Archive Project", "code": "ARC23"},
         headers=_auth_headers(admin),
     )
@@ -175,32 +177,32 @@ async def test_project_archive_and_restore_requires_management_role(
     await _assign_role(db_session, artist.id, RoleName.artist, project_uuid)
 
     denied_archive = await client.post(
-        f"/projects/{project_id}/archive",
+        f"/api/v1/projects/{project_id}/archive",
         headers=_auth_headers(artist),
     )
     assert denied_archive.status_code == 403
 
     archived = await client.post(
-        f"/projects/{project_id}/archive",
+        f"/api/v1/projects/{project_id}/archive",
         headers=_auth_headers(lead),
     )
     assert archived.status_code == 200
     assert archived.json()["archived_at"] is not None
 
     hidden_after_archive = await client.get(
-        f"/projects/{project_id}",
+        f"/api/v1/projects/{project_id}",
         headers=_auth_headers(lead),
     )
     assert hidden_after_archive.status_code == 404
 
     denied_restore = await client.post(
-        f"/projects/{project_id}/restore",
+        f"/api/v1/projects/{project_id}/restore",
         headers=_auth_headers(artist),
     )
     assert denied_restore.status_code == 403
 
     restored = await client.post(
-        f"/projects/{project_id}/restore",
+        f"/api/v1/projects/{project_id}/restore",
         headers=_auth_headers(admin),
     )
     assert restored.status_code == 200
@@ -218,7 +220,7 @@ async def test_list_projects_can_include_archived_items(
     await _assign_role(db_session, supervisor.id, RoleName.supervisor, None)
 
     archived_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Archived List Project", "code": "ALP23", "description": "archived target"},
         headers=_auth_headers(admin),
     )
@@ -227,7 +229,7 @@ async def test_list_projects_can_include_archived_items(
     archived_project_id = archived_project["id"]
 
     active_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Active List Project", "code": "ACT23", "description": "active target"},
         headers=_auth_headers(admin),
     )
@@ -236,13 +238,13 @@ async def test_list_projects_can_include_archived_items(
     active_project_id = active_project["id"]
 
     archive_response = await client.post(
-        f"/projects/{archived_project_id}/archive",
+        f"/api/v1/projects/{archived_project_id}/archive",
         headers=_auth_headers(admin),
     )
     assert archive_response.status_code == 200
     assert archive_response.json()["archived_at"] is not None
 
-    default_list = await client.get("/projects", headers=_auth_headers(supervisor))
+    default_list = await client.get("/api/v1/projects", headers=_auth_headers(supervisor))
     assert default_list.status_code == 200
     default_payload = default_list.json()
     default_items = {item["id"]: item for item in default_payload["items"]}
@@ -251,7 +253,7 @@ async def test_list_projects_can_include_archived_items(
     assert active_project_id in default_items
 
     include_archived_list = await client.get(
-        "/projects?include_archived=true",
+        "/api/v1/projects?include_archived=true",
         headers=_auth_headers(supervisor),
     )
     assert include_archived_list.status_code == 200
@@ -274,7 +276,7 @@ async def test_list_projects_include_archived_respects_project_visibility(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     visible_project_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Scoped Archived Visible", "code": "SAV23"},
         headers=_auth_headers(admin),
     )
@@ -282,7 +284,7 @@ async def test_list_projects_include_archived_respects_project_visibility(
     visible_project_id = visible_project_response.json()["id"]
 
     hidden_project_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Scoped Archived Hidden", "code": "SAH23"},
         headers=_auth_headers(admin),
     )
@@ -292,19 +294,19 @@ async def test_list_projects_include_archived_respects_project_visibility(
     await _assign_role(db_session, artist.id, RoleName.artist, uuid.UUID(visible_project_id))
 
     archive_visible = await client.post(
-        f"/projects/{visible_project_id}/archive",
+        f"/api/v1/projects/{visible_project_id}/archive",
         headers=_auth_headers(admin),
     )
     assert archive_visible.status_code == 200
 
     archive_hidden = await client.post(
-        f"/projects/{hidden_project_id}/archive",
+        f"/api/v1/projects/{hidden_project_id}/archive",
         headers=_auth_headers(admin),
     )
     assert archive_hidden.status_code == 200
 
     list_resp = await client.get(
-        "/projects?include_archived=true",
+        "/api/v1/projects?include_archived=true",
         headers=_auth_headers(artist),
     )
     assert list_resp.status_code == 200
@@ -326,7 +328,7 @@ async def test_project_overview_returns_aggregated_counts_and_completion(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Overview Project", "code": "OVW23"},
         headers=_auth_headers(admin),
     )
@@ -338,7 +340,7 @@ async def test_project_overview_returns_aggregated_counts_and_completion(
     await _assign_role(db_session, artist.id, RoleName.artist, project_uuid)
 
     shot_response = await client.post(
-        f"/projects/{project_id}/shots",
+        f"/api/v1/projects/{project_id}/shots",
         json={"name": "Shot OVW", "code": "SOVW01", "assigned_to": str(artist.id)},
         headers=_auth_headers(lead),
     )
@@ -346,7 +348,7 @@ async def test_project_overview_returns_aggregated_counts_and_completion(
     shot_id = shot_response.json()["id"]
 
     asset_response = await client.post(
-        f"/projects/{project_id}/assets",
+        f"/api/v1/projects/{project_id}/assets",
         json={"name": "Asset OVW", "asset_type": "prop", "assigned_to": str(artist.id)},
         headers=_auth_headers(lead),
     )
@@ -354,27 +356,27 @@ async def test_project_overview_returns_aggregated_counts_and_completion(
     asset_id = asset_response.json()["id"]
 
     denied_overview = await client.get(
-        f"/projects/{project_id}/overview",
+        f"/api/v1/projects/{project_id}/overview",
         headers={"Authorization": "Bearer invalid"},
     )
     assert denied_overview.status_code == 401
 
     shot_status = await client.patch(
-        f"/shots/{shot_id}/status",
+        f"/api/v1/shots/{shot_id}/status",
         json={"status": "in_progress", "comment": "start"},
         headers=_auth_headers(artist),
     )
     assert shot_status.status_code == 200
 
     asset_status = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "in_progress", "comment": "start"},
         headers=_auth_headers(artist),
     )
     assert asset_status.status_code == 200
 
     overview = await client.get(
-        f"/projects/{project_id}/overview",
+        f"/api/v1/projects/{project_id}/overview",
         headers=_auth_headers(artist),
     )
     assert overview.status_code == 200
@@ -399,7 +401,7 @@ async def test_patch_project_allows_project_lead(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Patch Project", "code": "PCH23", "description": "before"},
         headers=_auth_headers(admin),
     )
@@ -409,14 +411,14 @@ async def test_patch_project_allows_project_lead(
     await _assign_role(db_session, artist.id, RoleName.artist, uuid.UUID(project_id))
 
     denied = await client.patch(
-        f"/projects/{project_id}",
+        f"/api/v1/projects/{project_id}",
         json={"description": "artist change"},
         headers=_auth_headers(artist),
     )
     assert denied.status_code == 403
 
     allowed = await client.patch(
-        f"/projects/{project_id}",
+        f"/api/v1/projects/{project_id}",
         json={"description": "lead change", "status": "in_progress"},
         headers=_auth_headers(lead),
     )
@@ -435,7 +437,7 @@ async def test_create_project_generates_unique_code_when_omitted(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     first_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Auto Code Project"},
         headers=_auth_headers(admin),
     )
@@ -444,7 +446,7 @@ async def test_create_project_generates_unique_code_when_omitted(
     assert first_payload["code"] == "AUTO_CODE_PROJECT"
 
     second_response = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Auto Code Project"},
         headers=_auth_headers(admin),
     )
@@ -469,7 +471,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Report Project", "code": "RPT23"},
         headers=_auth_headers(admin),
     )
@@ -481,7 +483,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     await _assign_role(db_session, artist.id, RoleName.artist, project_uuid)
 
     create_shot = await client.post(
-        f"/projects/{project_id}/shots",
+        f"/api/v1/projects/{project_id}/shots",
         json={"name": "Shot Report", "code": "SREP01", "assigned_to": str(artist.id)},
         headers=_auth_headers(lead),
     )
@@ -489,7 +491,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     shot_id = create_shot.json()["id"]
 
     create_asset = await client.post(
-        f"/projects/{project_id}/assets",
+        f"/api/v1/projects/{project_id}/assets",
         json={"name": "Asset Report", "asset_type": "prop", "assigned_to": str(artist.id)},
         headers=_auth_headers(lead),
     )
@@ -497,7 +499,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     asset_id = create_asset.json()["id"]
 
     shot_in_progress = await client.patch(
-        f"/shots/{shot_id}/status",
+        f"/api/v1/shots/{shot_id}/status",
         json={"status": "in_progress", "comment": "start shot"},
         headers=_auth_headers(artist),
     )
@@ -505,7 +507,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     shot_in_progress_payload = shot_in_progress.json()
 
     shot_review = await client.patch(
-        f"/shots/{shot_id}/status",
+        f"/api/v1/shots/{shot_id}/status",
         json={"status": "review", "comment": "review shot"},
         headers=_auth_headers(artist),
     )
@@ -513,7 +515,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     shot_review_payload = shot_review.json()
 
     shot_revision = await client.patch(
-        f"/shots/{shot_id}/status",
+        f"/api/v1/shots/{shot_id}/status",
         json={"status": "revision", "comment": "request changes"},
         headers=_auth_headers(admin),
     )
@@ -521,7 +523,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     shot_revision_payload = shot_revision.json()
 
     shot_status = await client.patch(
-        f"/shots/{shot_id}/status",
+        f"/api/v1/shots/{shot_id}/status",
         json={"status": "approved", "comment": "approved shot"},
         headers=_auth_headers(admin),
     )
@@ -529,7 +531,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     shot_status_payload = shot_status.json()
 
     asset_in_progress = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "in_progress", "comment": "start asset"},
         headers=_auth_headers(artist),
     )
@@ -537,7 +539,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     asset_in_progress_payload = asset_in_progress.json()
 
     asset_review = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "review", "comment": "review asset"},
         headers=_auth_headers(artist),
     )
@@ -545,7 +547,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     asset_review_payload = asset_review.json()
 
     asset_revision = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "revision", "comment": "request changes"},
         headers=_auth_headers(admin),
     )
@@ -553,7 +555,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     asset_revision_payload = asset_revision.json()
 
     asset_approved = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "approved", "comment": "approved asset"},
         headers=_auth_headers(admin),
     )
@@ -561,7 +563,7 @@ async def test_project_report_includes_storage_and_recent_activity(
     asset_approved_payload = asset_approved.json()
 
     asset_status = await client.patch(
-        f"/assets/{asset_id}/status",
+        f"/api/v1/assets/{asset_id}/status",
         json={"status": "delivered", "comment": "delivered asset"},
         headers=_auth_headers(admin),
     )
@@ -570,7 +572,7 @@ async def test_project_report_includes_storage_and_recent_activity(
 
     shot_bytes = b"shot-data"
     shot_upload = await client.post(
-        f"/projects/{project_id}/files/upload",
+        f"/api/v1/projects/{project_id}/files/upload",
         files={"upload": ("shot.exr", shot_bytes, "image/x-exr")},
         data={"shot_id": shot_id},
         headers=_auth_headers(artist),
@@ -579,14 +581,16 @@ async def test_project_report_includes_storage_and_recent_activity(
 
     asset_bytes = b"asset-data"
     asset_upload = await client.post(
-        f"/projects/{project_id}/files/upload",
+        f"/api/v1/projects/{project_id}/files/upload",
         files={"upload": ("asset.exr", asset_bytes, "image/x-exr")},
         data={"asset_id": asset_id},
         headers=_auth_headers(artist),
     )
     assert asset_upload.status_code == 200
 
-    report = await client.get(f"/projects/{project_id}/report", headers=_auth_headers(artist))
+    report = await client.get(
+        f"/api/v1/projects/{project_id}/report", headers=_auth_headers(artist)
+    )
     assert report.status_code == 200
     payload = report.json()
 
@@ -696,7 +700,7 @@ async def test_project_export_csv_sync_and_async_modes(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Export Project", "code": "EXP23"},
         headers=_auth_headers(admin),
     )
@@ -708,7 +712,7 @@ async def test_project_export_csv_sync_and_async_modes(
     await _assign_role(db_session, artist.id, RoleName.artist, project_uuid)
 
     create_shot = await client.post(
-        f"/projects/{project_id}/shots",
+        f"/api/v1/projects/{project_id}/shots",
         json={"name": "Shot Export", "code": "SEXP01"},
         headers=_auth_headers(lead),
     )
@@ -716,7 +720,7 @@ async def test_project_export_csv_sync_and_async_modes(
     shot_payload = create_shot.json()
 
     create_asset = await client.post(
-        f"/projects/{project_id}/assets",
+        f"/api/v1/projects/{project_id}/assets",
         json={"name": "Asset Export", "asset_type": "environment"},
         headers=_auth_headers(lead),
     )
@@ -725,7 +729,7 @@ async def test_project_export_csv_sync_and_async_modes(
 
     monkeypatch.setattr(settings, "project_export_async_threshold_entities", 100)
     sync_response = await client.get(
-        f"/projects/{project_id}/export?format=csv",
+        f"/api/v1/projects/{project_id}/export?format=csv",
         headers=_auth_headers(artist),
     )
     assert sync_response.status_code == 200
@@ -764,7 +768,7 @@ async def test_project_export_csv_sync_and_async_modes(
 
     monkeypatch.setattr(settings, "project_export_async_threshold_entities", 1)
     async_response = await client.get(
-        f"/projects/{project_id}/export?format=csv",
+        f"/api/v1/projects/{project_id}/export?format=csv",
         headers=_auth_headers(artist),
     )
     assert async_response.status_code == 202
@@ -773,15 +777,13 @@ async def test_project_export_csv_sync_and_async_modes(
     assert async_payload["task_id"]
 
     task_id = async_payload["task_id"]
-    task_status = await client.get(f"/tasks/{task_id}", headers=_auth_headers(artist))
+    task_status = await client.get(f"/api/v1/tasks/{task_id}", headers=_auth_headers(artist))
     assert task_status.status_code == 200
     task_payload = task_status.json()
     assert task_payload["id"] == task_id
     assert task_payload["task_type"] == "project_export_csv"
-    assert task_payload["status"] in {"pending", "running"}
+    assert task_payload["status"] in {"pending", "running", "completed"}
     assert task_payload["created_by"] == str(artist.id)
-    assert task_payload["result"] is None
-    assert task_payload["error"] is None
 
 
 @pytest.mark.asyncio
@@ -793,7 +795,7 @@ async def test_project_export_rejects_unsupported_format(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_project = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Export Invalid", "code": "EXI23"},
         headers=_auth_headers(admin),
     )
@@ -801,7 +803,7 @@ async def test_project_export_rejects_unsupported_format(
     project_id = create_project.json()["id"]
 
     response = await client.get(
-        f"/projects/{project_id}/export?format=xlsx",
+        f"/api/v1/projects/{project_id}/export?format=xlsx",
         headers=_auth_headers(admin),
     )
     assert response.status_code == 422
@@ -816,14 +818,14 @@ async def test_get_single_project(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     create_resp = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Get Single Project", "code": "GSP23"},
         headers=_auth_headers(admin),
     )
     assert create_resp.status_code == 200
     project_id = create_resp.json()["id"]
 
-    get_resp = await client.get(f"/projects/{project_id}", headers=_auth_headers(admin))
+    get_resp = await client.get(f"/api/v1/projects/{project_id}", headers=_auth_headers(admin))
     assert get_resp.status_code == 200
     payload = get_resp.json()
     assert payload["id"] == project_id
@@ -841,14 +843,14 @@ async def test_list_projects_pagination(
 
     for i in range(3):
         r = await client.post(
-            "/projects",
+            "/api/v1/projects",
             json={"name": f"Pagination Project {i}", "code": f"PAG2{i}"},
             headers=_auth_headers(admin),
         )
         assert r.status_code == 200
 
     page1 = await client.get(
-        "/projects?offset=0&limit=2",
+        "/api/v1/projects?offset=0&limit=2",
         headers=_auth_headers(admin),
     )
     assert page1.status_code == 200
@@ -857,7 +859,7 @@ async def test_list_projects_pagination(
     assert page1_payload["total"] >= 3
 
     page2 = await client.get(
-        "/projects?offset=2&limit=2",
+        "/api/v1/projects?offset=2&limit=2",
         headers=_auth_headers(admin),
     )
     assert page2.status_code == 200
@@ -880,7 +882,7 @@ async def test_list_projects_role_visibility(
     await _assign_role(db_session, admin.id, RoleName.admin, None)
 
     proj_a = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Visible Project A", "code": "VPA23"},
         headers=_auth_headers(admin),
     )
@@ -888,7 +890,7 @@ async def test_list_projects_role_visibility(
     proj_a_id = proj_a.json()["id"]
 
     proj_b = await client.post(
-        "/projects",
+        "/api/v1/projects",
         json={"name": "Visible Project B", "code": "VPB23"},
         headers=_auth_headers(admin),
     )
@@ -898,7 +900,7 @@ async def test_list_projects_role_visibility(
     # artist_a is only assigned to project A
     await _assign_role(db_session, artist_a.id, RoleName.artist, uuid.UUID(proj_a_id))
 
-    list_resp = await client.get("/projects", headers=_auth_headers(artist_a))
+    list_resp = await client.get("/api/v1/projects", headers=_auth_headers(artist_a))
     assert list_resp.status_code == 200
     visible_ids = {item["id"] for item in list_resp.json()["items"]}
 

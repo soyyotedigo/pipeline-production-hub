@@ -118,7 +118,7 @@ class TestListNotifications:
         await _create_notification(db_session, user)
         await _create_notification(db_session, user)
 
-        resp = await client.get("/notifications", headers=_auth_headers(user))
+        resp = await client.get("/api/v1/notifications", headers=_auth_headers(user))
 
         assert resp.status_code == 200
         data = resp.json()
@@ -135,7 +135,7 @@ class TestListNotifications:
         await _create_notification(db_session, user_a)
         await _create_notification(db_session, user_b)
 
-        resp = await client.get("/notifications", headers=_auth_headers(user_a))
+        resp = await client.get("/api/v1/notifications", headers=_auth_headers(user_a))
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -149,7 +149,7 @@ class TestListNotifications:
         await _create_notification(db_session, user, is_read=False)
         await _create_notification(db_session, user, is_read=True)
 
-        resp = await client.get("/notifications?is_read=false", headers=_auth_headers(user))
+        resp = await client.get("/api/v1/notifications?is_read=false", headers=_auth_headers(user))
 
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
@@ -163,7 +163,9 @@ class TestListNotifications:
         for _ in range(5):
             await _create_notification(db_session, user)
 
-        resp = await client.get("/notifications?offset=0&limit=3", headers=_auth_headers(user))
+        resp = await client.get(
+            "/api/v1/notifications?offset=0&limit=3", headers=_auth_headers(user)
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -175,7 +177,7 @@ class TestListNotifications:
         client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
-        resp = await client.get("/notifications")
+        resp = await client.get("/api/v1/notifications")
 
         assert resp.status_code == 401
 
@@ -196,7 +198,7 @@ class TestUnreadCount:
         await _create_notification(db_session, user, is_read=False)
         await _create_notification(db_session, user, is_read=True)
 
-        resp = await client.get("/notifications/unread-count", headers=_auth_headers(user))
+        resp = await client.get("/api/v1/notifications/unread-count", headers=_auth_headers(user))
 
         assert resp.status_code == 200
         assert resp.json()["count"] == 2
@@ -208,7 +210,7 @@ class TestUnreadCount:
     ) -> None:
         user = await _create_user(db_session, "user-zero@notif.test")
 
-        resp = await client.get("/notifications/unread-count", headers=_auth_headers(user))
+        resp = await client.get("/api/v1/notifications/unread-count", headers=_auth_headers(user))
 
         assert resp.status_code == 200
         assert resp.json()["count"] == 0
@@ -229,7 +231,7 @@ class TestMarkNotificationRead:
         notif = await _create_notification(db_session, user, is_read=False)
 
         resp = await client.patch(
-            f"/notifications/{notif.id}/read",
+            f"/api/v1/notifications/{notif.id}/read",
             headers=_auth_headers(user),
         )
 
@@ -245,7 +247,7 @@ class TestMarkNotificationRead:
         user = await _create_user(db_session, "user-mark404@notif.test")
 
         resp = await client.patch(
-            f"/notifications/{uuid.uuid4()}/read",
+            f"/api/v1/notifications/{uuid.uuid4()}/read",
             headers=_auth_headers(user),
         )
 
@@ -261,7 +263,7 @@ class TestMarkNotificationRead:
         notif = await _create_notification(db_session, owner)
 
         resp = await client.patch(
-            f"/notifications/{notif.id}/read",
+            f"/api/v1/notifications/{notif.id}/read",
             headers=_auth_headers(other),
         )
 
@@ -283,11 +285,13 @@ class TestMarkAllRead:
         await _create_notification(db_session, user, is_read=False)
         await _create_notification(db_session, user, is_read=False)
 
-        resp = await client.post("/notifications/read-all", headers=_auth_headers(user))
+        resp = await client.post("/api/v1/notifications/read-all", headers=_auth_headers(user))
 
         assert resp.status_code == 204
 
-        count_resp = await client.get("/notifications/unread-count", headers=_auth_headers(user))
+        count_resp = await client.get(
+            "/api/v1/notifications/unread-count", headers=_auth_headers(user)
+        )
         assert count_resp.json()["count"] == 0
 
     async def test_mark_all_without_auth_returns_401(
@@ -295,7 +299,7 @@ class TestMarkAllRead:
         client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
-        resp = await client.post("/notifications/read-all")
+        resp = await client.post("/api/v1/notifications/read-all")
 
         assert resp.status_code == 401
 
@@ -315,7 +319,7 @@ class TestDeleteNotification:
         notif = await _create_notification(db_session, user)
 
         resp = await client.delete(
-            f"/notifications/{notif.id}",
+            f"/api/v1/notifications/{notif.id}",
             headers=_auth_headers(user),
         )
 
@@ -329,7 +333,7 @@ class TestDeleteNotification:
         user = await _create_user(db_session, "user-del404@notif.test")
 
         resp = await client.delete(
-            f"/notifications/{uuid.uuid4()}",
+            f"/api/v1/notifications/{uuid.uuid4()}",
             headers=_auth_headers(user),
         )
 
@@ -345,7 +349,7 @@ class TestDeleteNotification:
         notif = await _create_notification(db_session, owner)
 
         resp = await client.delete(
-            f"/notifications/{notif.id}",
+            f"/api/v1/notifications/{notif.id}",
             headers=_auth_headers(other),
         )
 

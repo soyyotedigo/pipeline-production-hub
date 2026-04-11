@@ -53,14 +53,14 @@ async def test_metrics_exposes_active_users_gauge(
     await _create_active_user(db_session, "metrics@vfxhub.dev", "admin123")
 
     login_response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "metrics@vfxhub.dev", "password": "admin123"},
     )
     assert login_response.status_code == 200
     access_token = login_response.json()["access_token"]
 
     me_response = await client.get(
-        "/auth/me",
+        "/api/v1/auth/me",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert me_response.status_code == 200

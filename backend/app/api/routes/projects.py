@@ -189,9 +189,9 @@ async def get_project_report(
     response_model=ScaffoldResponse,
     summary="Scaffold Project Filesystem",
     description=(
-        "Create the full directory tree for the project on the local filesystem. "
-        "Useful for visualizing and initializing the folder structure on disk. "
-        "Pass 'root' in the body to override the default storage root (e.g. 'E:/projects')."
+        "Generate (and optionally create) the full directory tree for the project. "
+        "Pass 'root' to override the default storage root (e.g. 'E:/projects'). "
+        "Set 'create': true to materialize the folders on disk (local storage only)."
     ),
 )
 async def scaffold_project(

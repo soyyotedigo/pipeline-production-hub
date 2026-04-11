@@ -115,7 +115,7 @@ jobs:
           PYTHONPATH: backend
 
       - name: Run tests with coverage
-        run: pytest -v --cov=backend --cov-report=term-missing --cov-report=xml:coverage.xml
+        run: pytest -v -m "not live" --cov=backend --cov-report=term-missing --cov-report=xml:coverage.xml
         env:
           PYTHONPATH: backend
 

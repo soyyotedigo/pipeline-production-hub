@@ -15,6 +15,7 @@ def get_storage_backend() -> StorageBackend:
     if backend == "s3":
         return S3Storage(
             bucket=settings.s3_bucket,
+            region=settings.s3_region,
             endpoint_url=settings.s3_endpoint_url,
             access_key=settings.s3_access_key,
             secret_key=settings.s3_secret_key,

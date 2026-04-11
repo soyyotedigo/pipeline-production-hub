@@ -114,7 +114,7 @@ async def test_get_task_status_owner_can_read(
     _, artist, _, shot = await _seed_project_context(db_session)
 
     upload_response = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("taskable.exr", b"task-payload", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
@@ -123,7 +123,7 @@ async def test_get_task_status_owner_can_read(
     task_ids = upload_response.json()["metadata_json"]["task_ids"]
     task_id = task_ids[0]
 
-    status_response = await client.get(f"/tasks/{task_id}", headers=_auth_headers(artist))
+    status_response = await client.get(f"/api/v1/tasks/{task_id}", headers=_auth_headers(artist))
     assert status_response.status_code == 200
     payload = status_response.json()
     assert payload["id"] == task_id
@@ -144,7 +144,7 @@ async def test_get_task_status_forbidden_for_non_owner(
     admin, artist, _, shot = await _seed_project_context(db_session)
 
     upload_response = await client.post(
-        "/files/upload",
+        "/api/v1/files/upload",
         files={"upload": ("taskable.exr", b"task-payload", "image/x-exr")},
         data={"shot_id": str(shot.id)},
         headers=_auth_headers(artist),
@@ -152,7 +152,7 @@ async def test_get_task_status_forbidden_for_non_owner(
     assert upload_response.status_code == 200
     task_id = upload_response.json()["metadata_json"]["task_ids"][0]
 
-    status_response = await client.get(f"/tasks/{task_id}", headers=_auth_headers(admin))
+    status_response = await client.get(f"/api/v1/tasks/{task_id}", headers=_auth_headers(admin))
     assert status_response.status_code == 403
     assert status_response.json()["error"]["code"] == "FORBIDDEN"
 
@@ -164,6 +164,6 @@ async def test_get_task_status_not_found(
 ) -> None:
     admin = await _create_user(db_session, f"tasks-notfound-{uuid.uuid4().hex[:8]}@vfxhub.dev")
 
-    response = await client.get(f"/tasks/{uuid.uuid4()}", headers=_auth_headers(admin))
+    response = await client.get(f"/api/v1/tasks/{uuid.uuid4()}", headers=_auth_headers(admin))
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
