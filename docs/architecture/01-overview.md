@@ -119,5 +119,5 @@ sequenceDiagram
 
 - Persistent domain state lives in PostgreSQL.
 - Redis does not replace the database; it stores transient state.
-- S3 is modeled as a possible backend but upload/download requires completing `S3Storage`.
+- S3 is implemented as an available storage backend alongside local storage.
 - The task system uses Redis as a simple queue with per-task state.

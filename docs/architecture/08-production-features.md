@@ -104,10 +104,9 @@ POST   /shots/{id}/notes
 POST   /assets/{id}/notes
 POST   /pipeline-tasks/{id}/notes
 POST   /projects/{id}/notes
-POST   /notes/{id}/replies
+POST   /notes/{id}/reply
 GET    /notes/{id}
 PATCH  /notes/{id}
-PATCH  /notes/{id}/resolve
 DELETE /notes/{id}
 ```
 
@@ -151,10 +150,12 @@ erDiagram
 ### Key endpoints
 
 ```
-POST  /shots/{id}/versions
-POST  /assets/{id}/versions
+POST  /pipeline-tasks/{id}/versions
 GET   /versions/{id}
 PATCH /versions/{id}/status
+GET   /projects/{id}/versions
+GET   /shots/{id}/versions
+GET   /assets/{id}/versions
 GET   /pipeline-tasks/{id}/versions
 ```
 
@@ -189,9 +190,10 @@ erDiagram
 
 ```
 POST   /shots/{id}/assets           link asset to shot
-DELETE /shots/{id}/assets/{asset_id}
+POST   /shots/{id}/assets/bulk      bulk link assets to shot
 GET    /shots/{id}/assets            assets used by the shot
 GET    /assets/{id}/shots            shots that use the asset
+DELETE /shot-asset-links/{id}        unlink by link id
 ```
 
 ---
@@ -241,8 +243,9 @@ erDiagram
 POST  /projects/{id}/playlists
 GET   /playlists/{id}
 POST  /playlists/{id}/items
-PATCH /playlists/{id}/items/{item_id}/review
-PATCH /playlists/{id}/status
+PATCH /playlists/{id}
+PATCH /playlist-items/{id}
+DELETE /playlist-items/{id}
 ```
 
 ---
