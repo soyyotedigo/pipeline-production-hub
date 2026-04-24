@@ -2,16 +2,12 @@
 
 > Production pipeline management system for VFX studios
 
-[![CI](https://github.com/soyyotedigo/pipeline-production-hub-dev/actions/workflows/ci.yml/badge.svg)](https://github.com/soyyotedigo/pipeline-production-hub-dev/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
+![Python|109](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
+![FastAPI|102](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Coverage](https://img.shields.io/badge/Coverage-92%25-brightgreen)
-![Tests](https://img.shields.io/badge/Tests-566%20passed-brightgreen)
-![MyPy](https://img.shields.io/badge/MyPy-0%20errors-blue)
 
 ---
 
@@ -20,6 +16,47 @@
 Pipeline Production Hub is a backend REST API that manages the full production lifecycle of creative projects: shots, assets, departments, pipeline tasks, client deliveries, hour tracking, and internal reviews.
 
 It was built as a portfolio project demonstrating production-grade patterns in FastAPI — async-first architecture, layered service design, RBAC, structured logging, Prometheus metrics, and pluggable cloud storage. The system is flexible enough to support VFX studios, game development pipelines, animation houses, and other media production workflows.
+
+In one quick pass:
+
+- **Problem**: creative production data is spread across shots, assets, task status, reviews, files, and deliveries, which makes coordination fragile without a central backend.
+- **Audience**: pipeline TD, backend, and technical artist interview loops, plus studios that need a compact production-management API example.
+- **Stack**: FastAPI, PostgreSQL, Redis, SQLAlchemy 2, Alembic, Docker Compose, Pytest, Ruff, and MyPy.
+- **What it demonstrates**: layered backend architecture, async I/O, auth and RBAC, background jobs, storage abstraction, observability, and DCC-facing pipeline examples.
+
+---
+
+## Portfolio Context
+
+This project is designed to show the intersection of backend engineering and production pipeline thinking:
+
+- **Backend engineering**: async API design, service and repository layering, migrations, validation, and test automation.
+- **Pipeline workflows**: shots, assets, versions, playlists, deliveries, review notes, and department-oriented tasks.
+- **Production tooling**: background exports, Redis-backed jobs, structured logs, metrics, and storage backends.
+- **Artist-facing integration**: DCC publish examples for Maya, Houdini, Nuke, and standalone tooling under `examples/dcc/`.
+
+---
+
+## Architecture Summary
+
+```mermaid
+flowchart LR
+    Client[Client / Swagger / DCC tooling] --> API[FastAPI routers]
+    API --> Services[Service layer\nBusiness rules + RBAC]
+    Services --> Repos[Repository layer]
+    Repos --> PG[(PostgreSQL)]
+    Services --> Redis[(Redis)]
+    Redis --> Worker[Background worker]
+    Worker --> Storage[(Local storage / S3)]
+```
+
+- FastAPI routers handle HTTP contracts, dependency injection, and request validation.
+- Services own business rules, authorization, and orchestration across domains.
+- Repositories isolate persistence details for PostgreSQL-backed entities.
+- Redis supports token invalidation, rate limiting, and background job coordination.
+- A dedicated worker handles longer-running tasks outside the request-response cycle.
+
+For the full technical reference, see [Architecture Docs](./docs/architecture/README.md).
 
 ---
 
@@ -69,7 +106,7 @@ All I/O is async. Background jobs (e.g. project exports) are enqueued to Redis a
 ## Design Highlights
 
 - **Layered architecture** — strict separation: routers handle HTTP, services own business rules, repositories own persistence. No business logic leaks into routes.
-- **Async-first** — all I/O is async (`asyncpg`, `httpx`, Redis). No sync blocking anywhere in the request path.
+- **Async-first** — the main I/O paths use async clients (`asyncpg`, `httpx`, Redis). Some CPU-bound work such as bcrypt password hashing still runs synchronously.
 - **RBAC at service layer** — six roles (`admin`, `supervisor`, `lead`, `artist`, `worker`, `client`) enforced in service methods, not middleware, so authorization logic lives next to the domain it protects.
 - **Pluggable storage** — `local` and S3-compatible backends behind a common interface; swap with a single `STORAGE_BACKEND` env var.
 - **Background jobs via Redis queue** — heavy operations (project exports) are enqueued to Redis and consumed by a dedicated worker, decoupling API response time from job duration.
@@ -78,30 +115,58 @@ All I/O is async. Background jobs (e.g. project exports) are enqueued to Redis a
 
 ---
 
+## Operational Evidence
+
+The current local validation pass covered the following:
+
+- `docker compose up --build` completes successfully
+- Alembic migrations apply cleanly to `head`
+- demo seed creates usable interview data
+- login, refresh, logout, `/health`, and `/metrics` work against a running stack
+- representative RBAC checks return expected `403` responses for restricted actions
+- project, shot, asset, and file flows were exercised end to end
+- local pytest suite passes: `566 passed`
+
+This section is intentionally limited to checks that were validated in the working repository, not aspirational claims.
+
+---
+
+## Visual Walkthrough
+
+![Swagger overview](./docs/images/swagger-overview.png)
+*Swagger UI showing the breadth of the API surface across system, auth, and production workflow domains.*
+
+![Login and auth flow](./docs/images/auth-flow.png)
+*Login flow returning access and refresh tokens for authenticated API use.*
+
+![Project and shot workflow](./docs/images/project-shot-flow.png)
+*Nested project-to-shot workflow showing a real creation request and successful API response.*
+
+![Operational visibility](./docs/images/observability.png)
+*Aggregated health endpoint confirming database, Redis, and storage availability.*
+
+---
+
 ## Features
 
-| Domain | Description |
+### Core workflow coverage
+
+| Area | What it covers |
 |---|---|
-| **Auth / RBAC** | JWT access + refresh tokens, Redis blacklist on logout, IP-based login rate limiting, six scoped roles (`admin`, `supervisor`, `lead`, `artist`, `worker`, `client`) at global and project scope |
-| **Projects** | Full CRUD with status tracking, per-project role assignments, and async export |
-| **Episodes / Sequences** | Editorial hierarchy for series and episodic productions |
-| **Shots** | Status lifecycle, frame ranges, assignment, status history |
-| **Assets** | Characters, props, environments with asset-type classification |
-| **Files** | Upload, download, checksum, deduplication, size limits, local + S3 storage |
-| **Pipeline Tasks** | Department-level tasks per shot/asset, template instantiation |
-| **Notes** | Polymorphic threaded feedback on any entity (shot, asset, task, project) |
-| **Versions** | Artist version submissions with review status transitions (`pending_review` → `approved` / `revision_requested`) |
-| **Shot–Asset Links** | Many-to-many relationship between shots and assets with link type |
-| **Playlists** | Dailies review sessions — ordered version lists with per-item review status |
-| **Departments** | Dynamic department management and user membership |
-| **Tags** | Flexible polymorphic categorization on shots, assets, sequences, projects |
-| **Time Logs** | Hour tracking per task and artist, bid vs actual comparison |
-| **Deliveries** | Client delivery packages with versioned items and acceptance status |
-| **Notifications** | Internal notifications auto-generated from system events |
-| **Webhooks** | Signed outgoing HTTP events to external systems |
-| **Background Tasks** | Redis queue + dedicated worker process for heavy async jobs |
-| **Metrics** | Prometheus endpoint with active-user gauge and request latency histograms |
-| **Health** | `/health` liveness probe |
+| **Auth / RBAC** | JWT access + refresh tokens, Redis blacklist on logout, login rate limiting, and six scoped roles (`admin`, `supervisor`, `lead`, `artist`, `worker`, `client`) |
+| **Production structure** | Projects, episodes, sequences, shots, and assets with status tracking, hierarchy, and ownership |
+| **Task and review loop** | Pipeline tasks, notes, versions, playlists, and deliveries for artist-to-supervisor workflows |
+| **File handling** | Upload, download, checksum, deduplication, version lineage, and local or S3-compatible storage |
+| **Planning and tracking** | Departments, tags, time logs, notifications, shot-asset links, and project reports |
+
+### Supporting engineering systems
+
+| Area | What it shows |
+|---|---|
+| **Background work** | Redis-backed queue plus dedicated worker for heavier operations such as exports |
+| **Observability** | Structured logs, Prometheus metrics, and `/health` checks |
+| **Developer workflow** | Docker Compose, Alembic migrations, seeded demo data, Bruno requests, smoke coverage, and pytest coverage |
+| **Pipeline integration** | DCC-side examples for Maya, Houdini, Nuke, and standalone tooling |
 
 ---
 
@@ -165,6 +230,10 @@ Services will be available at:
 - **API**: `http://localhost:8000`
 - **Interactive docs**: `http://localhost:8000/docs`
 - **Metrics**: `http://localhost:8000/metrics`
+
+### Interview demo
+
+For a short recruiter-friendly walkthrough, use [`docs/demo-script.md`](./docs/demo-script.md).
 
 ### Apply database migrations
 
@@ -313,9 +382,9 @@ Copy `.env.example` to `.env` and fill in the values. Key variables:
 ## Project Structure
 
 ```
-pipeline-production-hub-dev/
+pipeline-production-hub/
 ├── backend/app/
-│   ├── api/routes/         # 21 FastAPI routers, one per domain
+│   ├── api/routes/         # FastAPI routers, one per domain
 │   ├── services/           # Business logic and RBAC orchestration
 │   ├── repositories/       # Async SQLAlchemy persistence layer
 │   ├── models/             # SQLAlchemy ORM models
@@ -339,8 +408,18 @@ pipeline-production-hub-dev/
 ## Documentation
 
 - [Architecture reference](./docs/architecture/README.md)
-- [Implementation plans](./docs/plans/README.md)
 - [Testing workflow](./docs/testing-workflow.md)
+- [Interview demo script](./docs/demo-script.md)
+- [Interview prep notes](./docs/interview-prep.md)
+
+---
+
+## Scope And v1 Boundaries
+
+- This project is a backend-first portfolio piece, not a full production deployment for a studio.
+- The public repository may show a curated subset of the full day-to-day development history.
+- DCC examples are integration-oriented samples, not packaged production plugins.
+- The goal is to show credible architecture and workflow coverage rather than every possible studio-specific edge case.
 
 ---
 

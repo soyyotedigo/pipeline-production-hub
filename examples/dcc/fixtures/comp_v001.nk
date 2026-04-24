@@ -1,0 +1,16 @@
+Root {
+ name comp_v001.nk
+ first_frame 1001
+ last_frame 1048
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+}
+Read {
+ file "renders/SH010_comp_v001.%04d.exr"
+ first 1001
+ last 1048
+ name Read1
+}
+Write {
+ file "renders/SH010_comp_v001.mov"
+ name WriteReview
+}

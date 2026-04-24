@@ -101,12 +101,13 @@ Characteristics:
 
 ### S3
 
-`S3Storage` exists as a prepared interface, but is currently partial.
+`S3Storage` works today via `aiobotocore`.
 
 Real state:
 
-- `get_url()` returns a logical URL.
-- `upload()`, `download()`, `delete()` and `exists()` raise `NotImplementedError`.
+- `upload()`, `download()`, `delete()` and `exists()` are implemented against an S3-compatible backend.
+- `get_url()` returns a presigned download URL.
+- The repository includes live S3 integration tests in `test/test_s3_live.py`.
 
 ## Path templates
 

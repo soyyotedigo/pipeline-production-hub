@@ -1,0 +1,9 @@
+# Houdini fixture placeholder for Pipeline Production Hub portfolio demos.
+#
+# This file is intentionally a tiny ASCII stub instead of a real .hip / .hiplc
+# binary so the repository stays small and the publish flow can be exercised
+# without a Houdini license.
+#
+# Replace this file with a real Houdini scene from your local exercises before
+# recording portfolio demos.
+fx_v001 placeholder
