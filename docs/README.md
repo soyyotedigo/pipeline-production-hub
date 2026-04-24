@@ -1,21 +1,22 @@
-# Documentation Portal
+# Documentation Overview
 
-This directory is the entrypoint for project documentation. Canonical technical docs live in English under `docs/architecture/`, while implementation planning material lives under `docs/plans/`.
+This directory contains the public-facing reference material for Pipeline Production Hub.
 
-## Documentation Map
+## Start here
 
-| Area | Purpose | Start Here |
-|------|---------|------------|
-| Architecture | Canonical technical reference in reading order | [architecture/README.md](./architecture/README.md) |
-| Plans | Feature plans, rollout notes, implementation sketches | [plans/README.md](./plans/README.md) |
-| Testing workflow | Practical validation order for current backend work | [testing-workflow.md](./testing-workflow.md) |
-| Writing conventions | Repository-level language guidance for AI-assisted work | [LEARN_ENGLISH.md](./LEARN_ENGLISH.md) |
+| Area | Why it matters | Start Here |
+|------|----------------|------------|
+| Architecture | Technical overview of the backend, data model, and infrastructure | [architecture/README.md](./architecture/README.md) |
+| Guided walkthrough | Short recruiter-friendly demo flow using the seeded environment | [demo-script.md](./demo-script.md) |
+| DCC integration | Artist-facing publish examples for Maya, Houdini, Nuke, and CLI tooling | [dcc-integration.md](./dcc-integration.md) |
+| Testing and quality | How the project is validated locally and in CI | [testing-workflow.md](./testing-workflow.md) |
+| Data model reference | Visual schema snapshot for the core production entities | [vfx_hub_schema.md](./vfx_hub_schema.md) |
 
 ## System Overview
 
 ```mermaid
 flowchart TD
-    Client[Client / Frontend]
+    Client[Client / Swagger / DCC tooling]
     API[FastAPI API]
     Services[Services]
     Repos[Repositories]
@@ -35,15 +36,7 @@ flowchart TD
     Worker --> Storage
 ```
 
-## Rules
-
-- `docs/architecture/` is the source of truth for technical documentation.
-- Numbered files are reserved for architecture/reference docs only.
-- `docs/plans/` is intentionally unnumbered and organized by feature slug.
-- New docs should be written in English only.
-- Mermaid diagrams are required for architecture docs and optional elsewhere when they improve clarity.
-
 ## Notes
 
-- The old top-level localized docs are no longer the primary navigation layer.
-- Existing plan content has been moved under `docs/plans/` and renamed with English slugs so future cleanup can happen in place.
+- `docs/architecture/` is the canonical technical reference.
+- The other documents in this folder are portfolio-facing guides that explain demo flow, validation, and integration examples.

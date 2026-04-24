@@ -1,6 +1,6 @@
-# Interview Demo Script
+# Guided Demo Walkthrough
 
-Use this script for a 2 to 5 minute walkthrough of Pipeline Production Hub.
+Use this walkthrough for a 2 to 5 minute demo of Pipeline Production Hub.
 
 ## Goal
 
@@ -32,13 +32,13 @@ Open:
 - Health endpoint: `http://localhost:8000/health`
 - Metrics endpoint: `http://localhost:8000/metrics`
 
-## Fixed script
+## Recommended flow
 
 ### 1. Start with the value proposition
 
-Say:
+Open with a short framing statement:
 
-"This is a FastAPI backend for production pipeline management. It models projects, shots, assets, versions, tasks, notes, deliveries, and related workflow concerns such as auth, RBAC, metrics, and background jobs."
+"Pipeline Production Hub is a FastAPI backend for production pipeline management. It models projects, shots, assets, versions, tasks, notes, deliveries, and supporting workflow concerns such as auth, RBAC, metrics, and background jobs."
 
 ### 2. Show login
 
@@ -46,7 +46,7 @@ Say:
 - Run login with the seeded admin user `admin@vfxhub.dev` / `admin123`.
 - Point out access and refresh tokens.
 
-Key point:
+What to call out:
 
 "The API supports short-lived access tokens, refresh tokens, and logout backed by Redis token invalidation."
 
@@ -57,7 +57,7 @@ Key point:
 - Call out `SH010 Opening Wide` in `SQ010` and the hierarchy `project -> episode -> sequence -> shot`.
 - Highlight that project structure is not flat CRUD; shots and assets live inside a production hierarchy.
 
-Key point:
+What to call out:
 
 "The API is organized around production relationships, not only around isolated tables."
 
@@ -67,7 +67,7 @@ Key point:
 - Then open project versions or shot versions and show that seeded review data already exists.
 - If you want one extra click, mention playlists or deliveries as downstream review surfaces.
 
-Key point:
+What to call out:
 
 "This backend is meant to support production state changes, review loops, and artist-supervisor collaboration."
 
@@ -78,7 +78,7 @@ Key point:
 - If you want a stronger storage example, open `GET /shots/{id}/files` or `GET /projects/{id}/files` and point out file metadata plus version lineage endpoints under `/files/{id}/versions`.
 - Mention that file uploads enqueue thumbnail and checksum background tasks after metadata is created.
 
-Key point:
+What to call out:
 
 "The project includes reviewable version history and file lineage, not just entity CRUD. Uploads also trigger background work through the task queue."
 
@@ -88,7 +88,7 @@ Key point:
 - Open `/metrics`.
 - Mention Docker Compose, Alembic migrations, tests, and CI.
 
-Key point:
+What to call out:
 
 "I wanted the project to show production-minded engineering, not just endpoint count."
 
@@ -107,8 +107,8 @@ If there is time, show one of these:
 - Do not go endpoint by endpoint.
 - Do not spend the whole demo on setup commands.
 
-## Interview framing
+## Closing angle
 
-Good closing line:
+Good closing summary:
 
 "The project is intentionally shaped as a portfolio backend that shows how I think about API design, production workflows, system boundaries, and shipping something credible end to end."

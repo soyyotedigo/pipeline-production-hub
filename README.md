@@ -387,15 +387,15 @@ docker compose exec api bash -c "ruff check . && ruff format . && mypy backend &
 
 Copy `.env.example` to `.env` and fill in the values. Key variables:
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Async PostgreSQL URL (`postgresql+asyncpg://...`) |
-| `REDIS_URL` | Redis connection string |
-| `JWT_SECRET` | Secret key for signing JWTs |
-| `STORAGE_BACKEND` | `local` (default) or `s3` |
-| `LOCAL_STORAGE_ROOT` | Base path for local file storage |
-| `S3_BUCKET` | S3 / MinIO bucket name |
-| `S3_ENDPOINT_URL` | Custom endpoint for MinIO / LocalStack |
+| Variable             | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `DATABASE_URL`       | Async PostgreSQL URL (`postgresql+asyncpg://...`) |
+| `REDIS_URL`          | Redis connection string                           |
+| `JWT_SECRET`         | Secret key for signing JWTs                       |
+| `STORAGE_BACKEND`    | `local` (default) or `s3`                         |
+| `LOCAL_STORAGE_ROOT` | Base path for local file storage                  |
+| `S3_BUCKET`          | S3 / MinIO bucket name                            |
+| `S3_ENDPOINT_URL`    | Custom endpoint for MinIO / LocalStack            |
 
 ---
 
@@ -415,9 +415,7 @@ pipeline-production-hub/
 ├── test/                   # Pytest test suite
 ├── examples/
 │   └── dcc/                # Portfolio-oriented DCC / artist publish examples
-├── docs/
-│   ├── architecture/       # Technical reference docs
-│   └── plans/              # Implementation plans
+├── docs/                   # Public-facing reference and walkthrough docs
 ├── docker-compose.yml
 ├── Dockerfile
 └── pyproject.toml
@@ -428,9 +426,9 @@ pipeline-production-hub/
 ## Documentation
 
 - [Architecture reference](./docs/architecture/README.md)
-- [Testing workflow](./docs/testing-workflow.md)
-- [Interview demo script](./docs/demo-script.md)
-- [Interview prep notes](./docs/interview-prep.md)
+- [Guided demo walkthrough](./docs/demo-script.md)
+- [DCC integration examples](./docs/dcc-integration.md)
+- [Testing and validation notes](./docs/testing-workflow.md)
 
 ---
 
