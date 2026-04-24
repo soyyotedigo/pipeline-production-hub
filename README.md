@@ -172,45 +172,56 @@ This section is intentionally limited to checks that were validated in the worki
 
 ## API Example
 
-Create a shot inside a project:
+Against the seeded demo project, list versions already attached to `DEMO`:
 
 ```bash
-curl -X POST http://localhost:8000/projects/{project_id}/shots \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Shot 010",
-    "code": "SH010",
-    "frame_start": 1001,
-    "frame_end": 1040,
-    "assigned_to": "<user_id>"
-  }'
+curl -X GET "http://localhost:8000/projects/<demo_project_id>/versions?limit=2" \
+  -H "Authorization: Bearer <token>"
 ```
 
-Response `200 OK`:
+Representative response:
 
 ```json
 {
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "project_id": "...",
-  "name": "Shot 010",
-  "code": "SH010",
-  "status": "pending",
-  "frame_start": 1001,
-  "frame_end": 1040,
-  "assigned_to": "...",
-  "created_at": "2026-03-01T12:00:00Z",
-  "archived_at": null
+  "items": [
+    {
+      "id": "7d6eb8c1-3c77-4ea4-93a3-fbe2a6b63c11",
+      "project_id": "c3dd0fd8-7f2c-4f9d-a9ad-5f9764420f1e",
+      "shot_id": "e3f77bf8-0c91-46c2-a845-31d6bb889db3",
+      "pipeline_task_id": "b0dca8c4-3aaf-4d31-a728-25c1b65e0558",
+      "code": "SH010-comp-v002",
+      "version_number": 2,
+      "status": "pending_review",
+      "description": "Updated comp pass for Opening Wide",
+      "submitted_by": "9c495845-d8d7-48f0-9c6e-cd4d5d9b9469",
+      "created_at": "2026-04-20T18:42:11Z"
+    },
+    {
+      "id": "41f7b517-05ba-4b5c-96dd-a7c72f0c362d",
+      "project_id": "c3dd0fd8-7f2c-4f9d-a9ad-5f9764420f1e",
+      "shot_id": "e3f77bf8-0c91-46c2-a845-31d6bb889db3",
+      "pipeline_task_id": "b0dca8c4-3aaf-4d31-a728-25c1b65e0558",
+      "code": "SH010-comp-v001",
+      "version_number": 1,
+      "status": "approved",
+      "description": "Initial comp submit for Opening Wide",
+      "submitted_by": "9c495845-d8d7-48f0-9c6e-cd4d5d9b9469",
+      "created_at": "2026-04-19T09:10:03Z"
+    }
+  ],
+  "total": 2,
+  "offset": 0,
+  "limit": 2
 }
 ```
 
-Transition shot status:
+Update a seeded shot status during the walkthrough:
 
 ```bash
-curl -X PATCH http://localhost:8000/shots/{shot_id}/status \
+curl -X PATCH http://localhost:8000/shots/<sh030_id>/status \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"status": "in_progress", "comment": "Starting layout pass"}'
+  -d '{"status": "in_progress", "comment": "Starting FX work on the seeded demo shot"}'
 ```
 
 Full interactive docs at `http://localhost:8000/docs`.
@@ -332,6 +343,15 @@ Thin DCC-side publish examples live under `examples/dcc/`.
 - Nuke-oriented publish flow with live or mock DCC context
 
 Start here: [`examples/dcc/README.md`](./examples/dcc/README.md)
+
+---
+
+## Future Work
+
+- add a small frontend or review dashboard on top of the current API surface
+- expand background workers beyond exports and file post-processing into more production automation
+- add deeper audit trails, notifications, and cross-project reporting for studio-scale scenarios
+- publish a short recorded walkthrough alongside the written demo script
 
 ---
 
